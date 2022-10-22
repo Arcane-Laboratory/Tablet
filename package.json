@@ -1,0 +1,42 @@
+{
+  "name": "@wizardtower/tablet",
+  "version": "0.1.0",
+  "description": "DB abstraction layer for JSON, Sheets, MongoDB, etc.",
+  "main": "index.ts",
+  "scripts": {
+    "test": "npm run test",
+    "clean": "rmdir /Q /S built",
+    "prebuild": "npm run clean",
+    "build": "npm run lint && tsc",
+    "tsc": "tsc",
+    "lint": "eslint . --ext .js,.ts",
+    "lint-fix": "eslint . --ext .js,.ts --fix && prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arcane-Laboratory/Tablet.git"
+  },
+  "author": "@wizardtower",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Arcane-Laboratory/Tablet/issues"
+  },
+  "homepage": "https://github.com/Arcane-Laboratory/Tablet#readme",
+  "devDependencies": {
+    "@types/node": "^18.11.3",
+    "@typescript-eslint/eslint-plugin": "^5.5.0",
+    "@typescript-eslint/parser": "^5.5.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-etc": "^2.0.2",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
+    "ts-jest": "^27.1.0",
+    "ts-node": "^10.8.1",
+    "typescript": "^4.5.2"
+  },
+  "dependencies": {
+    "eslint": "^8.26.0",
+    "json-stable-stringify": "^1.0.1"
+  }
+}

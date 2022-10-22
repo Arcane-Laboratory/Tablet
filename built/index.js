@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.tableList = exports.printTable = exports.JsonTable = exports.Table = void 0;
+var Table_1 = require("./src/Table");
+Object.defineProperty(exports, "Table", { enumerable: true, get: function () { return Table_1.Table; } });
+var JsonTable_1 = require("./src/JsonTable");
+Object.defineProperty(exports, "JsonTable", { enumerable: true, get: function () { return JsonTable_1.JsonTable; } });
+var commands_1 = require("./src/commands");
+Object.defineProperty(exports, "printTable", { enumerable: true, get: function () { return commands_1.printTable; } });
+Object.defineProperty(exports, "tableList", { enumerable: true, get: function () { return commands_1.tableList; } });

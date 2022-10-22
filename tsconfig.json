@@ -1,0 +1,25 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "allowJs": true,
+    "alwaysStrict": true,
+    "composite": true,
+    "declaration": true,
+    "declarationDir": "./built",
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "outDir": "./built",
+    "preserveConstEnums": true,
+    "pretty": true,
+    "rootDir": "./",
+    "strict": true,
+    "target": "es2020",
+    "useDefineForClassFields": false
+  },
+  "include": ["src", "types", "index.ts"],
+  "exclude": ["node_modules", "built", "src/**/*.spec.ts", "src/sheetsDB/*"]
+}
