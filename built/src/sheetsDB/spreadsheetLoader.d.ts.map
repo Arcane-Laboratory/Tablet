@@ -1,1 +1,0 @@
-{"version":3,"file":"spreadsheetLoader.d.ts","sourceRoot":"","sources":["../../../src/sheetsDB/spreadsheetLoader.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,iBAAiB,EAAE,MAAM,oBAAoB,CAAA;AAGtD,OAAO,EAAE,IAAI,EAAE,MAAM,YAAY,CAAA;AAGjC,QAAA,MAAM,eAAe,EAAE,KAAK,CAAC,iBAAiB,CAAM,CAAA;AAEpD,QAAA,MAAM,gBAAgB,mBAA0B,MAAM,MAAM,CAAC,8BAe5D,CAAA;AAED,OAAO,EAAE,gBAAgB,EAAE,eAAe,EAAE,CAAA"}

@@ -15,8 +15,10 @@ abstract class Table<T extends tableData> {
   public abstract crupdates(entries: Array<T>): Promise<Array<T>>
   public abstract delete(entry: T): Promise<boolean>
 
+  public abstract filter(filter: (args0: T) => boolean): Array<T>
+
   public toString(): string {
-    let str = `GihaTable: ${this.name} \n${this.cache.size} entries`
+    let str = `Tablet: ${this.name} \n${this.cache.size} entries`
     this.cache.forEach(
       (datum) => (str += `\n ${datum.id}: ${Table.idDataStringify(datum)}`)
     )

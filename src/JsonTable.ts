@@ -40,6 +40,14 @@ class JsonTable<T extends tableData> extends Table<T> {
     return arr
   }
 
+  public filter(filter: (arg0: T) => boolean): Array<T> {
+    const entries: Array<T> = []
+    this.cache.forEach((element) => {
+      if (filter(element)) entries.push(element)
+    })
+    return entries
+  }
+
   public async fetch(id: string, forceRefresh?: boolean): Promise<T | null> {
     const cachedVal = this.cache.get(id)
     if (cachedVal !== undefined) return cachedVal
