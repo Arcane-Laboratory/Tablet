@@ -22,6 +22,7 @@ interface jsonStore<T extends tableData> {
 
 class JsonTable<T extends tableData> extends Table<T> {
   public readonly filePath: PathLike
+  private cache: Map<string, T> = new Map<string, T>()
   private bufferWrite = false
   private ioBufferInterval = setInterval(() => this.ioBuffer(), 1000)
   constructor(public readonly name: string, filePath?: PathLike) {
@@ -40,7 +41,7 @@ class JsonTable<T extends tableData> extends Table<T> {
     return arr
   }
 
-  public filter(filter: (arg0: T) => boolean): Array<T> {
+  public async filter(filter: (entry: T) => boolean): Promise<Array<T>> {
     const entries: Array<T> = []
     this.cache.forEach((element) => {
       if (filter(element)) entries.push(element)

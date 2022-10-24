@@ -51,6 +51,20 @@ export abstract class Entity<T extends tableData> {
     return newEntity
   }
 
+  static async filterEntity<T extends tableData>(
+    entityConstructor: entityConstructor<T>,
+    filterFn: (entity: T) => boolean
+  ): Promise<Array<Entity<T>>> {
+    const table = Entity.findTable<T>(entityConstructor)
+    const loadFactory = Entity.findLoadFactory<T>(entityConstructor)
+    const records = await table.filter(filterFn)
+    const newEntities = await Promise.all(
+      records.map(async (record) => await loadFactory(record))
+    )
+
+    return newEntities
+  }
+
   save<T extends tableData>(entity: Entity<T>) {
     const ctor = extractCtor(entity)
     const table = Entity.findTable(ctor)
