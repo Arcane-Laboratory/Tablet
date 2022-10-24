@@ -9,7 +9,7 @@ abstract class Table<T extends tableData> {
 
   public abstract numEntries(): number
   public abstract toArray(): Array<T>
-
+  public abstract generateId(): Promise<string>
   public abstract fetch(id: string, forceRefresh?: boolean): Promise<T | null>
   public abstract crupdate(entry: T): Promise<T>
   public abstract crupdates(entries: Array<T>): Promise<Array<T>>

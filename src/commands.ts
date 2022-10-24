@@ -1,3 +1,4 @@
+import { Entity } from './Entity'
 import { Table } from './Table'
 
 const printTable = (tableName: string) => {
@@ -8,6 +9,9 @@ const printTable = (tableName: string) => {
 
 const tableList = () => {
   return Table.all.keys.toString()
+}
+const entityList = () => {
+  return Entity.entityCacheList()
 }
 
 export { printTable, tableList }

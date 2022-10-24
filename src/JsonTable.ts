@@ -54,6 +54,10 @@ class JsonTable<T extends tableData> extends Table<T> {
     return null
   }
 
+  public async generateId(): Promise<string> {
+    return '00' + this.name + this.cache.size
+  }
+
   public async crupdate(entry: T) {
     if (!this.validate(entry)) throw `${entry} is not valid`
     this.cache.set(entry.id, entry)
