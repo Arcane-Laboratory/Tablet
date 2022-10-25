@@ -49,6 +49,15 @@ class JsonTable<T extends tableData> extends Table<T> {
     return entries
   }
 
+  public async find(finder: (entry: T) => boolean): Promise<T | undefined> {
+    let found: T | undefined
+    this.cache.forEach((entry) => {
+      if (found) return found
+      if (finder(entry)) found = entry
+    })
+    return found
+  }
+
   public async fetch(id: string, forceRefresh?: boolean): Promise<T | null> {
     const cachedVal = this.cache.get(id)
     if (cachedVal !== undefined) return cachedVal

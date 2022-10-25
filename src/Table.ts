@@ -12,7 +12,8 @@ abstract class Table<T extends tableData> {
   public abstract crupdate(entry: T): Promise<T>
   public abstract crupdates(entries: Array<T>): Promise<Array<T>>
   public abstract delete(entry: T): Promise<boolean>
-  public abstract filter(filter: (args0: T) => boolean): Promise<Array<T>>
+  public abstract filter(filter: (entry: T) => boolean): Promise<Array<T>>
+  public abstract find(finder: (entry: T) => boolean): Promise<T | undefined>
 
   public toString(): string {
     let str = `Tablet: ${this.name} \n${this.numEntries()} entries`
