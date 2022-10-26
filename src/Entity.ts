@@ -6,54 +6,49 @@ type loadFactory<T extends tableData, U extends Entity<T>> = (
   record: T
 ) => Promise<U>
 
-type registryConfirmation = {
-  tableUpdate: Map<entityConstructor<any>, Table<any>>
-  cacheUpdate: Map<entityConstructor<any>, Array<Entity<any>>>
-  loadFactoryUpdate: Map<
-    entityConstructor<tableData>,
-    loadFactory<tableData, Entity<tableData>>
-  >
-}
 
 export abstract class Entity<T extends tableData> implements tableData {
-  public abstract readonly id: string
-  private static tables: Map<entityConstructor<any>, Table<any>>
-  private static caches: Map<entityConstructor<any>, Array<Entity<any>>>
-  private static loadFactories: Map<
-    entityConstructor<any>,
-    loadFactory<any, Entity<any>>
+  private static tables = new Map<entityConstructor<any>, Table<any>>()
+  private static caches = new Map<entityConstructor<any>, Array<Entity<any>>>()
+  private static loadFactories = new Map<
+  entityConstructor<any>,
+  loadFactory<any, Entity<any>>
   >
-
+  
+  public abstract readonly id: string
   constructor() {
-    const ctor = extractCtor(this)
+    // Ensure that Entity Subclass has been registered
+    const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
     const cache = Entity.findCache(ctor)
     const loadFactory = Entity.findLoadFactory(ctor)
+    // add this item to the table
+    table.crupdate(this.generateRecord())
+    // add this item to the cache
+    cache.push(this)
   }
 
   public abstract generateRecord(): T
 
-  public abstract registryConfirmation: registryConfirmation
-
-  public static register<T extends tableData, U extends Entity<T>>(
-    entityConstructor: entityConstructor<T>,
+  public static registerEntity<T extends tableData, U extends Entity<T>>(
+    this: new (...args: any[]) => U,
     table: Table<T>,
     loadFactory: loadFactory<T, U>
-  ): registryConfirmation {
+  ): boolean {
     const registryConfirmation = {
-      tableUpdate: this.tables.set(entityConstructor, table),
-      cacheUpdate: this.caches.set(entityConstructor, []),
-      loadFactoryUpdate: this.loadFactories.set(entityConstructor, loadFactory),
+      tableUpdate: Entity.tables.set(this, table),
+      cacheUpdate: Entity.caches.set(this, []),
+      loadFactoryUpdate: Entity.loadFactories.set(this, loadFactory),
     }
-    return registryConfirmation
+    return true
   }
 
-  static async fetchEntity<T extends tableData, U extends Entity<T>>(
-    entityConstructor: entityConstructor<T>,
+  static async fetch<T extends tableData, U extends Entity<T>>(
+    this: new (...args: any[]) => U,
     id: string
   ): Promise<U | null> {
-    const table = Entity.findTable<T>(entityConstructor)
-    const loadFactory = Entity.findLoadFactory<T, U>(entityConstructor)
+    const table = Entity.findTable<T>(this)
+    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const record = await table.fetch(id)
     if (record == null) return null
     const newEntity = await loadFactory(record)
@@ -61,11 +56,11 @@ export abstract class Entity<T extends tableData> implements tableData {
   }
 
   static async filterEntity<T extends tableData, U extends Entity<T>>(
-    entityConstructor: entityConstructor<T>,
+    this: new (...args: any[]) => U,
     filterFn: (entity: T) => boolean
   ): Promise<Array<U>> {
-    const table = Entity.findTable<T>(entityConstructor)
-    const loadFactory = Entity.findLoadFactory<T, U>(entityConstructor)
+    const table = Entity.findTable<T>(this)
+    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const records = await table.filter(filterFn)
     const newEntities = await Promise.all(
       records.map(async (record) => await loadFactory(record))
@@ -75,29 +70,32 @@ export abstract class Entity<T extends tableData> implements tableData {
   }
 
   static async findEntity<T extends tableData, U extends Entity<T>>(
-    entityConstructor: entityConstructor<T>,
+    this: new (...args: any[]) => U,
     findFn: (entity: T) => boolean
   ): Promise<U | undefined> {
-    const table = Entity.findTable<T>(entityConstructor)
-    const loadFactory = Entity.findLoadFactory<T, U>(entityConstructor)
+    const table = Entity.findTable<T>(this)
+    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const record = await table.find(findFn)
     if (!record) return undefined
     const newEntity = await loadFactory(record)
     return newEntity
   }
 
+  public static async crupdate<T extends tableData, U extends Entity<T>>(
+    this: new (...args: any[]) => U,
+    record: T
+  ): Promise<U> {
+    const table = Entity.findTable(this)
+    const savedRecord = await table.crupdate(record)
+    const loadFactory = Entity.findLoadFactory<T, U>(this)
+    return loadFactory(savedRecord)
+  }
+
   save() {
-    const ctor = extractCtor(this)
+    const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
     const record = this.generateRecord()
     table.crupdate(record)
-  }
-
-  public static async generateId<T extends tableData>(
-    entityConstructor: entityConstructor<T>
-  ): Promise<string> {
-    const table = this.findTable(entityConstructor)
-    return table.generateId()
   }
 
   public static entityCacheList(): string {
@@ -108,6 +106,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     return cacheList.join('\n')
   }
 
+  /** */
   private static findTable<T extends tableData>(
     entityConstructor: entityConstructor<T>
   ): Table<T> {
@@ -117,13 +116,15 @@ export abstract class Entity<T extends tableData> implements tableData {
       throw `no table exists with constructor ${entityConstructor.toString()}`
   }
 
-  private static findCache<T extends tableData>(
+  private static findCache<T extends tableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
-  ): Array<Entity<T>> {
+  ): Array<U> {
     const cache = Entity.caches.get(entityConstructor)
-    if (cache) return cache
+    if (cache) return cache as U[]
     else
-      throw `no cache exists with constructor ${entityConstructor.toString()}`
+      throw `no cache exists with constructor ${Object.getPrototypeOf(
+        this
+      ).constructor.toString()}`
   }
 
   private static findLoadFactory<T extends tableData, U extends Entity<T>>(
@@ -132,9 +133,19 @@ export abstract class Entity<T extends tableData> implements tableData {
     const loadFactory = Entity.loadFactories.get(entityConstructor)
     if (loadFactory) return loadFactory as loadFactory<T, U>
     else
-      throw `no factory exists with constructor ${entityConstructor.toString()}`
+      throw `no factory exists with constructor ${Object.getPrototypeOf(
+        this
+      ).constructor.toString()}`
   }
-}
-
-const extractCtor = (entity: Entity<any>) =>
-  Object.getPrototypeOf(entity).constructor
+  
+  /**
+   * 
+   * @param entity 
+   * @returns 
+   */
+  private static ctorOf = <T extends tableData, U extends Entity<T>>(entity: U): entityConstructor<T> => {
+    return Object.getPrototypeOf(
+      entity
+      ).constructor
+    }
+  }
