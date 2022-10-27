@@ -15,17 +15,29 @@ export abstract class Entity<T extends tableData> implements tableData {
   loadFactory<any, Entity<any>>
   >
   
-  public abstract readonly id: string
-  constructor() {
+  private _id: string = 'ID_PENDING'
+  
+  constructor(id?: string) {
+    if(id)this.id = id
     // Ensure that Entity Subclass has been registered
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
     const cache = Entity.findCache(ctor)
     const loadFactory = Entity.findLoadFactory(ctor)
-    // add this item to the table
-    table.crupdate(this.generateRecord())
     // add this item to the cache
     cache.push(this)
+  }
+
+  
+  public get id() : string {
+    return this._id
+  }
+  
+  public set id(id: string) {
+    if(id == this._id) return 
+    else if (this._id == 'ID_PENDING')
+      this._id = id
+    else console.warn(`TABLET_WARNING_001: NO_ID_OVERRIDES\nEntity ID set as ${this._id}, did not override to ${id}`)
   }
 
   public abstract generateRecord(): T
@@ -51,8 +63,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     const loadFactory = Entity.findLoadFactory<T, U>(this)
     const record = await table.fetch(id)
     if (record == null) return null
-    const newEntity = await loadFactory(record)
-    return newEntity
+    return loadFactory(record)
   }
 
   static async filterEntity<T extends tableData, U extends Entity<T>>(
@@ -91,11 +102,12 @@ export abstract class Entity<T extends tableData> implements tableData {
     return loadFactory(savedRecord)
   }
 
-  save() {
+  async save():Promise<string> {
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
     const record = this.generateRecord()
-    table.crupdate(record)
+    const writtenRecord = await table.crupdate(record)
+    return writtenRecord.id
   }
 
   public static entityCacheList(): string {
