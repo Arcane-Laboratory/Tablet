@@ -26,9 +26,9 @@ class JsonTable<T extends tableData> extends Table<T> {
   private cache: Map<string, T> = new Map<string, T>()
   private bufferWrite = false
   private ioBufferInterval = setInterval(() => this.ioBuffer(), 1000)
-  constructor(public readonly name: string, filePath?: PathLike) {
+  constructor(public readonly name: string, filePath: PathLike | 'DEFAULT') {
     super(name)
-    this.filePath = filePath ? filePath : fileDir + `${name}` + fileExt
+    this.filePath = 'DEFAULT' ? fileDir + `${name}` + fileExt : filePath
     this.loadTable()
   }
   public numEntries(): number {
