@@ -11,14 +11,14 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static tables = new Map<entityConstructor<any>, Table<any>>()
   private static caches = new Map<entityConstructor<any>, Array<Entity<any>>>()
   private static loadFactories = new Map<
-  entityConstructor<any>,
-  loadFactory<any, Entity<any>>
+    entityConstructor<any>,
+    loadFactory<any, Entity<any>>
   >
   
   private _id: string = 'ID_PENDING'
   
   constructor(id?: string) {
-    if(id)this.id = id
+    if (id) this.id = id
     // Ensure that Entity Subclass has been registered
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
@@ -29,12 +29,12 @@ export abstract class Entity<T extends tableData> implements tableData {
   }
 
   
-  public get id() : string {
+  public get id(): string {
     return this._id
   }
   
   public set id(id: string) {
-    if(id == this._id) return 
+    if (id == this._id) return
     else if (this._id == 'ID_PENDING')
       this._id = id
     else console.warn(`TABLET_WARNING_001: NO_ID_OVERRIDES\nEntity ID set as ${this._id}, did not override to ${id}`)
@@ -102,7 +102,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     return loadFactory(savedRecord)
   }
 
-  async save():Promise<string> {
+  async save(): Promise<string> {
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
     const record = this.generateRecord()
@@ -158,6 +158,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static ctorOf = <T extends tableData, U extends Entity<T>>(entity: U): entityConstructor<T> => {
     return Object.getPrototypeOf(
       entity
-      ).constructor
-    }
+    ).constructor
   }
+}
+
