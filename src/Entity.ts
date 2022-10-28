@@ -13,7 +13,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static loadFactories = new Map<
     entityConstructor<any>,
     loadFactory<any, Entity<any>>
-  >
+  >()
   
   private _id: string = 'ID_PENDING'
   
@@ -150,11 +150,7 @@ export abstract class Entity<T extends tableData> implements tableData {
       ).constructor.toString()}`
   }
   
-  /**
-   * 
-   * @param entity 
-   * @returns 
-   */
+
   private static ctorOf = <T extends tableData, U extends Entity<T>>(entity: U): entityConstructor<T> => {
     return Object.getPrototypeOf(
       entity
