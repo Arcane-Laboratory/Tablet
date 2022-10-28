@@ -7,16 +7,17 @@ import {
 } from 'fs'
 import { Table, tableData } from './Table'
 
-import { stringify } from 'json-stable-stringify'
+import { default as stringify } from 'json-stable-stringify'
 
 const stringifyOpts = {
   space: 2,
 }
 const fileDir = './devDb/'
+const fileExt = '.tablet.json'
 
 interface jsonStore<T extends tableData> {
-  name: string
-  lastUpdate: string
+  __name: string
+  _lastUpdate: string
   data: Array<T>
 }
 
@@ -27,7 +28,8 @@ class JsonTable<T extends tableData> extends Table<T> {
   private ioBufferInterval = setInterval(() => this.ioBuffer(), 1000)
   constructor(public readonly name: string, filePath?: PathLike) {
     super(name)
-    this.filePath = filePath ? filePath : fileDir + `${name}.gha.json`
+    this.filePath = filePath ? filePath : fileDir + `${name}` + fileExt
+    this.loadTable()
   }
   public numEntries(): number {
     return this.cache.size
@@ -62,6 +64,10 @@ class JsonTable<T extends tableData> extends Table<T> {
     const cachedVal = this.cache.get(id)
     if (cachedVal !== undefined) return cachedVal
     return null
+  }
+
+  public async fetchAll(): Promise<Array<T>> {
+    return Array.from(this.cache.values())
   }
 
   public async generateId(): Promise<string> {
@@ -103,8 +109,8 @@ class JsonTable<T extends tableData> extends Table<T> {
   private saveTable() {
     touchDir()
     const savable: jsonStore<T> = {
-      name: this.name,
-      lastUpdate: new Date().toLocaleDateString(),
+      __name: this.name,
+      _lastUpdate: new Date().toLocaleDateString(),
       data: this.toArray(),
     }
     const stringifiedTable = stringify(savable, stringifyOpts)
@@ -121,16 +127,35 @@ class JsonTable<T extends tableData> extends Table<T> {
 
   private loadTable(): Table<T> {
     touchDir()
-    const fileOut: jsonStore<T> = JSON.parse(
-      readFileSync(this.filePath, 'utf-8').toString()
-    )
-    if (!Array.isArray(fileOut.data))
-      throw `${this.filePath} data is formatted incorrectly, needs to be an array`
-    fileOut.data.forEach((entry) => {
-      this.crupdate(entry)
-    })
-    console.log(`read ${fileOut.data.length} entries from file`)
-    return this
+    let fileOut: jsonStore<T>
+    try {
+      fileOut = JSON.parse(readFileSync(this.filePath, 'utf-8').toString())
+      if (!Array.isArray(fileOut.data))
+        throw `${this.filePath} data is formatted incorrectly, needs to be an array`
+      fileOut.data.forEach((entry) => {
+        this.crupdate(entry)
+      })
+      console.log(
+        `TABLET: JsonTable read ${fileOut.data.length} entries from file ${this.filePath}`
+      )
+      return this
+    } catch (err) {
+      if (err instanceof Error) {
+        if (
+          err.message ==
+          `ENOENT: no such file or directory, open '${this.filePath}'`
+        ) {
+          this.saveTable()
+          return this.loadTable()
+        } else if (err.name.substring(0, 11) == 'SyntaxError') {
+          throw `TABLET_ERROR: JSONTABLE FILE ${this.filePath} IS INCORRECTLY FORMATTED`
+        } else {
+          console.log(err.message.substring(0, 10))
+          console.log(err.name.substring(0, 10))
+          throw err
+        }
+      } else throw err
+    }
   }
 }
 

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { Table, tableData } from './Table'
 
 type entityConstructor<T extends tableData> = new (...args: any[]) => Entity<T>
@@ -6,7 +7,6 @@ type loadFactory<T extends tableData, U extends Entity<T>> = (
   record: T
 ) => Promise<U>
 
-
 export abstract class Entity<T extends tableData> implements tableData {
   private static tables = new Map<entityConstructor<any>, Table<any>>()
   private static caches = new Map<entityConstructor<any>, Array<Entity<any>>>()
@@ -14,11 +14,12 @@ export abstract class Entity<T extends tableData> implements tableData {
     entityConstructor<any>,
     loadFactory<any, Entity<any>>
   >()
-  
-  private _id: string = 'ID_PENDING'
-  
+
+  public readonly id: string
+
   constructor(id?: string) {
     if (id) this.id = id
+    else this.id = randomUUID()
     // Ensure that Entity Subclass has been registered
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
@@ -28,18 +29,6 @@ export abstract class Entity<T extends tableData> implements tableData {
     cache.push(this)
   }
 
-  
-  public get id(): string {
-    return this._id
-  }
-  
-  public set id(id: string) {
-    if (id == this._id) return
-    else if (this._id == 'ID_PENDING')
-      this._id = id
-    else console.warn(`TABLET_WARNING_001: NO_ID_OVERRIDES\nEntity ID set as ${this._id}, did not override to ${id}`)
-  }
-
   public abstract generateRecord(): T
 
   public static registerEntity<T extends tableData, U extends Entity<T>>(
@@ -47,6 +36,10 @@ export abstract class Entity<T extends tableData> implements tableData {
     table: Table<T>,
     loadFactory: loadFactory<T, U>
   ): boolean {
+    if (table == undefined)
+      throw `TABLET_ENTITY.registerEntity: ${this.name} table can't be undefined`
+    if (loadFactory == undefined)
+      throw `TABLET_ENTITY.registerEntity: ${this.name} loadFactory can't be undefined`
     const registryConfirmation = {
       tableUpdate: Entity.tables.set(this, table),
       cacheUpdate: Entity.caches.set(this, []),
@@ -64,6 +57,17 @@ export abstract class Entity<T extends tableData> implements tableData {
     const record = await table.fetch(id)
     if (record == null) return null
     return loadFactory(record)
+  }
+
+  static async fetchAll<T extends tableData, U extends Entity<T>>(
+    this: new (...args: any[]) => U
+  ): Promise<Array<U>> {
+    const table = Entity.findTable<T>(this)
+    const loadFactory = Entity.findLoadFactory<T, U>(this)
+    const allRecords = await table.fetchAll()
+    return await Promise.all(
+      allRecords.map(async (record) => await loadFactory(record))
+    )
   }
 
   static async filterEntity<T extends tableData, U extends Entity<T>>(
@@ -92,6 +96,14 @@ export abstract class Entity<T extends tableData> implements tableData {
     return newEntity
   }
 
+  static findRecord<T extends tableData>(
+    this: new (...args: any[]) => Entity<T>,
+    findFn: (entity: T) => boolean
+  ): Promise<T | undefined> {
+    const table = Entity.findTable<T>(this)
+    return table.find(findFn)
+  }
+
   public static async crupdate<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     record: T
@@ -110,12 +122,22 @@ export abstract class Entity<T extends tableData> implements tableData {
     return writtenRecord.id
   }
 
-  public static entityCacheList(): string {
-    const cacheList: Array<string> = []
+  public static entityCacheList(): Array<{
+    ctor: entityConstructor<any>
+    cacheSize: number
+  }> {
+    const ctors: Array<{ ctor: entityConstructor<any>; cacheSize: number }> = []
     Entity.caches.forEach((cache, ctor) => {
-      cacheList.push(`${ctor.name} - ${cache.length} entries cached`)
+      ctors.push({ ctor: ctor, cacheSize: cache.length })
     })
-    return cacheList.join('\n')
+    return ctors
+  }
+  3
+
+  public static numCached<T extends tableData>(
+    this: new (...args: any[]) => Entity<T>
+  ): number {
+    return Entity.findCache(this).length
   }
 
   /** */
@@ -124,8 +146,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   ): Table<T> {
     const table = Entity.tables.get(entityConstructor)
     if (table) return table
-    else
-      throw `no table exists with constructor ${entityConstructor.toString()}`
+    else throw `no table exists with constructor ${entityConstructor.name}`
   }
 
   private static findCache<T extends tableData, U extends Entity<T>>(
@@ -149,12 +170,10 @@ export abstract class Entity<T extends tableData> implements tableData {
         this
       ).constructor.toString()}`
   }
-  
 
-  private static ctorOf = <T extends tableData, U extends Entity<T>>(entity: U): entityConstructor<T> => {
-    return Object.getPrototypeOf(
-      entity
-    ).constructor
+  private static ctorOf = <T extends tableData, U extends Entity<T>>(
+    entity: U
+  ): entityConstructor<T> => {
+    return Object.getPrototypeOf(entity).constructor
   }
 }
-

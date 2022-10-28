@@ -1,17 +1,30 @@
 import { Entity } from './Entity'
 import { Table } from './Table'
 
-const printTable = (tableName: string) => {
+const tableToString = (tableName: string) => {
   const table = Table.all.get(tableName)
   if (table == undefined) return 'undefined'
   else return table.toString()
 }
 
 const tableList = () => {
-  return Table.all.keys.toString()
+  const keys: Array<string> = []
+  Table.all.forEach((table, key) => {
+    keys.push(key)
+  })
+  return keys.join('\n')
 }
-const entityList = () => {
+
+const allEntities = () => {
   return Entity.entityCacheList()
 }
 
-export { printTable, tableList }
+const entityList = () => {
+  const cacheList: Array<string> = []
+  Entity.entityCacheList().forEach((entity) => {
+    cacheList.push(`${entity.ctor.name} - ${entity.cacheSize} entries cached`)
+  })
+  return cacheList.join('\n')
+}
+
+export { tableToString, tableList, entityList, allEntities }
