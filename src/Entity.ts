@@ -1,17 +1,22 @@
 import { randomUUID } from 'crypto'
 import { Table, tableData } from './Table'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type entityConstructor<T extends tableData> = new (...args: any[]) => Entity<T>
 
-type loadFactory<T extends tableData, U extends Entity<T>> = (
-  record: T
-) => Promise<U>
+interface loadFactory<T extends tableData, U extends Entity<T>> {
+  (record: T): Promise<U>
+}
 
 export abstract class Entity<T extends tableData> implements tableData {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static tables = new Map<entityConstructor<any>, Table<any>>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static caches = new Map<entityConstructor<any>, Array<Entity<any>>>()
   private static loadFactories = new Map<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entityConstructor<any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loadFactory<any, Entity<any>>
   >()
 
@@ -22,9 +27,9 @@ export abstract class Entity<T extends tableData> implements tableData {
     else this.id = randomUUID()
     // Ensure that Entity Subclass has been registered
     const ctor = Entity.ctorOf(this)
-    const table = Entity.findTable(ctor)
+    Entity.findLoadFactory(ctor)
+    Entity.findTable(ctor)
     const cache = Entity.findCache(ctor)
-    const loadFactory = Entity.findLoadFactory(ctor)
     // add this item to the cache
     cache.push(this)
   }
@@ -40,11 +45,9 @@ export abstract class Entity<T extends tableData> implements tableData {
       throw `TABLET_ENTITY.registerEntity: ${this.name} table can't be undefined`
     if (loadFactory == undefined)
       throw `TABLET_ENTITY.registerEntity: ${this.name} loadFactory can't be undefined`
-    const registryConfirmation = {
-      tableUpdate: Entity.tables.set(this, table),
-      cacheUpdate: Entity.caches.set(this, []),
-      loadFactoryUpdate: Entity.loadFactories.set(this, loadFactory),
-    }
+    Entity.tables.set(this, table)
+    Entity.caches.set(this, [])
+    Entity.loadFactories.set(this, loadFactory)
     return true
   }
 
@@ -61,10 +64,11 @@ export abstract class Entity<T extends tableData> implements tableData {
 
   static async fetchAll<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U
-  ): Promise<Array<U>> {
+  ): Promise<Array<U> | null> {
     const table = Entity.findTable<T>(this)
     const loadFactory = Entity.findLoadFactory<T, U>(this)
     const allRecords = await table.fetchAll()
+    if (allRecords == false) return null
     return await Promise.all(
       allRecords.map(async (record) => await loadFactory(record))
     )
@@ -107,19 +111,22 @@ export abstract class Entity<T extends tableData> implements tableData {
   public static async crupdate<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     record: T
-  ): Promise<U> {
+  ): Promise<U | null> {
     const table = Entity.findTable(this)
     const savedRecord = await table.crupdate(record)
-    const loadFactory = Entity.findLoadFactory<T, U>(this)
-    return loadFactory(savedRecord)
+    if (savedRecord) {
+      const loadFactory = Entity.findLoadFactory<T, U>(this)
+      return loadFactory(savedRecord)
+    } else return null
   }
 
-  async save(): Promise<string> {
+  async save(): Promise<string | null> {
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
     const record = this.generateRecord()
     const writtenRecord = await table.crupdate(record)
-    return writtenRecord.id
+    if (writtenRecord) return writtenRecord.id
+    else return null
   }
 
   public static entityCacheList(): Array<{

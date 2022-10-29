@@ -12,7 +12,7 @@ import {
   spreadsheetInfo,
 } from './sheetsUtil'
 
-class SheetTable<T extends tableData> extends Table<T> {
+export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
   private spreadsheet!: Spreadsheet
   private sheet!: Sheet
@@ -69,7 +69,6 @@ class SheetTable<T extends tableData> extends Table<T> {
       try {
         await limiter.removeTokens(1)
         this.rows[index].lastUpdate = nowString()
-        // @ts-ignore
         await this.rows[index].save({ raw: true })
         return true
       } catch (err) {

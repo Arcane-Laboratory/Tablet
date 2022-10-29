@@ -15,7 +15,7 @@ interface spreadsheetInfo {
   spreadsheetId: string
 }
 
-const rowToData = <T extends tableData>(row: Row): T => {
+const parseRow = <T extends tableData>(row: Row): T => {
   const keys = Object.keys(row)
   const keyValuePairs = keys.map((key) => `${key}: ${JSON.parse(row[key])}`)
   const stringObject = '{' + keyValuePairs.join(',\n')
@@ -48,4 +48,10 @@ const loadSpreadsheet = async (
   }
 }
 
-export { gKey, spreadsheetInfo, rowToData, limiter, loadSpreadsheet }
+export {
+  gKey,
+  spreadsheetInfo,
+  parseRow as rowToData,
+  limiter,
+  loadSpreadsheet,
+}

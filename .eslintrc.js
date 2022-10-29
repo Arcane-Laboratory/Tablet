@@ -34,6 +34,7 @@ module.exports = {
         'no-case-declarations': ['warn'],
         'eol-last': ['warn', 'windows'],
         'no-unused-vars': 'off', // disable js unused vars
+        '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-unused-vars': [
           'error',
           { argsIgnorePattern: '^_' },
@@ -42,7 +43,6 @@ module.exports = {
         'etc/no-enum': 1, // see https://ncjamieson.com/dont-export-const-enums/
         // and
         //https://github.com/cartant/eslint-plugin-etc/blob/main/docs/rules/no-enum.md
-        'etc/no-misused-generics': 1,
         'etc/prefer-interface': 1,
       },
     },

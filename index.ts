@@ -1,6 +1,7 @@
 export { Table, tableData } from './src/Table'
 
-export { JsonTable } from './src/JsonTable'
+export { JsonTable } from './src/json/JsonTable'
+export { SheetTable } from './src/sheets/SheetTable'
 
 export {
   tableToString,

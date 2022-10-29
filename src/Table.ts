@@ -16,7 +16,7 @@ abstract class Table<T extends tableData> {
   public abstract find(finder: (entry: T) => boolean): Promise<T | undefined>
 
   public toString(): string {
-    let str = `Tablet: ${this.name} \n${this.numEntries()} entries`
+    const str = `Tablet: ${this.name} \n${this.numEntries()} entries`
     // this.cache.forEach(
     //   (datum) => (str += `\n ${datum.id}: ${Table.idDataStringify(datum)}`)
     // )
