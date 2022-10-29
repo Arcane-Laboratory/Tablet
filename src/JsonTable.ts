@@ -8,11 +8,12 @@ import {
 import { Table, tableData } from './Table'
 
 import { default as stringify } from 'json-stable-stringify'
+import path from 'path'
 
 const stringifyOpts = {
   space: 2,
 }
-const fileDir = './devDb/'
+const DEFAULT_DIRECTORY = './devDb/'
 const fileExt = '.tablet.json'
 
 interface jsonStore<T extends tableData> {
@@ -22,13 +23,15 @@ interface jsonStore<T extends tableData> {
 }
 
 class JsonTable<T extends tableData> extends Table<T> {
+  public readonly dirPath: PathLike
   public readonly filePath: PathLike
   private cache: Map<string, T> = new Map<string, T>()
   private bufferWrite = false
   private ioBufferInterval = setInterval(() => this.ioBuffer(), 1000)
-  constructor(public readonly name: string, filePath: PathLike | 'DEFAULT') {
+  constructor(public readonly name: string, fileDir: PathLike | 'DEFAULT') {
     super(name)
-    this.filePath = 'DEFAULT' ? fileDir + `${name}` + fileExt : filePath
+    this.dirPath = fileDir == 'DEFAULT' ? DEFAULT_DIRECTORY : fileDir
+    this.filePath = path.join(this.dirPath.toString(), name + fileExt)
     this.loadTable()
   }
   public numEntries(): number {
@@ -107,7 +110,7 @@ class JsonTable<T extends tableData> extends Table<T> {
   }
 
   private saveTable() {
-    touchDir()
+    this.touchDir()
     const savable: jsonStore<T> = {
       __name: this.name,
       _lastUpdate: new Date().toLocaleDateString(),
@@ -124,9 +127,9 @@ class JsonTable<T extends tableData> extends Table<T> {
       console.log(err)
     }
   }
-
+  private retries = 0
   private loadTable(): Table<T> {
-    touchDir()
+    this.touchDir()
     let fileOut: jsonStore<T>
     try {
       fileOut = JSON.parse(readFileSync(this.filePath, 'utf-8').toString())
@@ -145,6 +148,9 @@ class JsonTable<T extends tableData> extends Table<T> {
           err.message ==
           `ENOENT: no such file or directory, open '${this.filePath}'`
         ) {
+          if (this.retries > 3)
+            throw `TABLET_ERROR: JsonTable.load failed after ${this.retries} attempts`
+          this.retries++
           this.saveTable()
           return this.loadTable()
         } else if (err.name.substring(0, 11) == 'SyntaxError') {
@@ -157,15 +163,14 @@ class JsonTable<T extends tableData> extends Table<T> {
       } else throw err
     }
   }
-}
-
-let dirCheck = false
-const touchDir = () => {
-  if (dirCheck) return
-  if (!existsSync(fileDir)) {
-    mkdirSync(fileDir, { recursive: true })
+  private dirCheck = false
+  private touchDir = () => {
+    if (this.dirCheck) return
+    if (!existsSync(this.dirPath)) {
+      mkdirSync(this.dirPath, { recursive: true })
+    }
+    this.dirCheck = true
   }
-  dirCheck = true
 }
 
 export { JsonTable }
