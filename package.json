@@ -37,6 +37,8 @@
   },
   "dependencies": {
     "eslint": "^8.26.0",
-    "json-stable-stringify": "^1.0.1"
+    "google-spreadsheet": "^3.3.0",
+    "json-stable-stringify": "^1.0.1",
+    "limiter": "^2.1.0"
   }
 }

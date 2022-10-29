@@ -8,9 +8,9 @@ abstract class Table<T extends tableData> {
   public abstract numEntries(): number
   public abstract toArray(): Array<T>
   public abstract fetch(id: string, forceRefresh?: boolean): Promise<T | null>
-  public abstract fetchAll(forceRefresh?: boolean): Promise<Array<T>>
-  public abstract crupdate(entry: T): Promise<T>
-  public abstract crupdates(entries: Array<T>): Promise<Array<T>>
+  public abstract fetchAll(forceRefresh?: boolean): Promise<Array<T> | false>
+  public abstract crupdate(entry: T): Promise<T | false>
+  public abstract crupdates(entries: Array<T>): Promise<Array<T | false>>
   public abstract delete(entry: T): Promise<boolean>
   public abstract filter(filter: (entry: T) => boolean): Promise<Array<T>>
   public abstract find(finder: (entry: T) => boolean): Promise<T | undefined>

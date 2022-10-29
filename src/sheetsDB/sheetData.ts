@@ -14,8 +14,6 @@ import { log, warn } from '../util/_utilIndex'
 import { spreadsheetList } from './spreadsheetLoader'
 
 class SheetData<data extends idData> {
-  table: GihaTable<data>
-  readonly spreadsheetTitle: string
   readonly tabTitle: string
   readonly headerTypeMap: headerTypeMap
   private spreadsheet!: GoogleSpreadsheet
@@ -23,9 +21,7 @@ class SheetData<data extends idData> {
   private rows!: GoogleSpreadsheetRow[]
 
   constructor(spreadsheetTitle: string, table: GihaTable<data>) {
-    this.table = table
     this.tabTitle = table.name
-    this.spreadsheetTitle = spreadsheetTitle
     // remake headerTypeMap to force id to be the first key for sheetsDB purposes
     this.headerTypeMap = new Map<string, PARSABLE_TYPE>()
     this.headerTypeMap.set('id', PARSABLE_TYPE.STRING)
@@ -109,9 +105,9 @@ class SheetData<data extends idData> {
    * Load saved data
    */
   loadData = async () => {
-    this.spreadsheet = spreadsheetList[this.spreadsheetTitle]
+    this.spreadsheet = spreadsheetList[this.name]
     if (!this.spreadsheet)
-      throw `no spreadsheet named ${this.spreadsheetTitle} found in sheetList. ${this.tabTitle} sheetDb was not initialized`
+      throw `no spreadsheet named ${this.name} found in sheetList. ${this.tabTitle} sheetDb was not initialized`
 
     this.sheet = this.spreadsheet.sheetsByTitle[this.tabTitle]
     if (!this.sheet) await this.createSheet()

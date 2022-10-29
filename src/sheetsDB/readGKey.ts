@@ -1,8 +1,3 @@
-interface gKey {
-  private_key: string
-  client_email: string
-}
-
 const getGkey = (): gKey => {
   if (!process.env) throw 'no env found'
   const gkey = process.env.GKEY
@@ -14,4 +9,4 @@ const getGkey = (): gKey => {
   return { private_key: gkey, client_email: email }
 }
 
-export { getGkey, gKey }
+export { getGkey }
