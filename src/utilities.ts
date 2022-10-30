@@ -1,4 +1,4 @@
-const nowString = () => Date.now().toString()
+const nowString = () => Date.now().toLocaleString()
 
 interface summaryEntry {
   value: string | number | boolean

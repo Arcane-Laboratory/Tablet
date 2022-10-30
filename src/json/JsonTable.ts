@@ -9,6 +9,7 @@ import { Table, tableData } from '../Table'
 
 import { default as stringify } from 'json-stable-stringify'
 import path from 'path'
+import { nowString } from '../utilities'
 
 const stringifyOpts = {
   space: 2,
@@ -122,7 +123,7 @@ class JsonTable<T extends tableData> extends Table<T> {
     this.touchDir()
     const savable: jsonStore<T> = {
       __name: this.name,
-      _lastUpdate: new Date().toLocaleDateString(),
+      _lastUpdate: nowString(),
       data: this.toArray(),
     }
     const stringifiedTable = stringify(savable, stringifyOpts)
