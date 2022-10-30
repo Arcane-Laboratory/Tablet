@@ -15,13 +15,6 @@ interface spreadsheetInfo {
   spreadsheetId: string
 }
 
-const parseRow = <T extends tableData>(row: Row): T => {
-  const keys = Object.keys(row)
-  const keyValuePairs = keys.map((key) => `${key}: ${JSON.parse(row[key])}`)
-  const stringObject = '{' + keyValuePairs.join(',\n')
-  return JSON.parse(stringObject) as T
-}
-
 const limiter = new RateLimiter({ tokensPerInterval: 1, interval: 1000 })
 
 const spreadsheetIdMap = new Map<string, Promise<Spreadsheet>>()
@@ -52,10 +45,16 @@ const load = async (spreadsheetInfo: spreadsheetInfo): Promise<Spreadsheet> => {
   return spreadsheet
 }
 
-export {
-  gKey,
-  spreadsheetInfo,
-  parseRow as rowToData,
-  limiter,
-  loadSpreadsheet,
+const parseVal = (val: string) => {
+  let parsedVal: unknown
+  try {
+    parsedVal = JSON.parse(val)
+  } catch {
+    parsedVal = val
+  }
+  if (parsedVal == 'TRUE') parsedVal = true
+  if (parsedVal == 'FALSE') parsedVal = false
+  return parsedVal
 }
+
+export { gKey, spreadsheetInfo, limiter, loadSpreadsheet, parseVal }

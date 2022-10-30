@@ -5,7 +5,10 @@ import { tableSummary } from './utilities'
 abstract class Table<T extends tableData> {
   public static all = new Map<string, Table<tableData>>()
   constructor(public readonly name: string) {
-    Table.all.set(this.name, this)
+    const extantTable = Table.all.get(name)
+    if (extantTable)
+      throw `There is already a table named ${name}. Pick a different name for this one!`
+    Table.all.set(name, this)
   }
   public abstract numEntries(): number
   public abstract toArray(): Array<T>
@@ -24,6 +27,13 @@ abstract class Table<T extends tableData> {
     //   (datum) => (str += `\n ${datum.id}: ${Table.idDataStringify(datum)}`)
     // )
     return str
+  }
+
+  public async clone(targetTable: Table<T>) {
+    const crupdates = this.toArray().map((entry) => {
+      targetTable.crupdate(entry)
+    })
+    return Promise.all(crupdates)
   }
 
   protected validate(entry: T): boolean {
