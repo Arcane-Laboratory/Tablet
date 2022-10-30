@@ -11,19 +11,25 @@ import {
   rowToData,
   spreadsheetInfo,
 } from './sheetsUtil'
+import { isError } from 'util'
 
 export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
   private spreadsheet!: Spreadsheet
   private sheet!: Sheet
   private rows!: Array<Row>
+  private headers = ['id', 'createdAt', 'lastUpdate']
   constructor(
     public readonly name: string, // also used as spreadsheet tab name
     public readonly spreadsheetInfo: spreadsheetInfo,
-    public readonly headers: Array<string>
+    exampleEntry: T
   ) {
     super(name)
     this.spreadsheetId = spreadsheetInfo.spreadsheetId
+    Object.keys(exampleEntry).forEach((key) => {
+      if (this.headers.find((header) => header == key) == undefined)
+        this.headers.push(key)
+    })
     this.load()
   }
 
@@ -101,21 +107,11 @@ export class SheetTable<T extends tableData> extends Table<T> {
   ): Promise<T | null> {
     const found = this.rows?.find((row) => row.id === id)
     if (!found) return null
-    const foundObj: any = {}
-    this.headers.forEach((header) => {
-      foundObj[header] = found[header]
-    })
-    return foundObj as T
+    return rowToData(found) as T
   }
 
   public async fetchAll(forceRefresh?: boolean | undefined): Promise<T[]> {
-    const allData = this.rows.map((row) => {
-      const obj: any = {}
-      this.headers.forEach((header) => {
-        obj[header] = row[header]
-      })
-      return obj as T
-    })
+    const allData = this.rows.map((row) => rowToData(row) as T)
     return allData
   }
 
@@ -142,7 +138,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
     let changes = false
     if (index === -1) index = this.rows.findIndex((row) => row.id === entry.id)
     if (index === -1) return false
-    this.headers.forEach((header) => {
+    Object.keys(entry).forEach((header) => {
       if (
         header != 'lastUpdate' &&
         entry[header] &&
@@ -156,14 +152,14 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   private async load() {
-    this.loadSpreadsheet()
-    this.getOrCreateSheet()
-    this.syncSheetHeaders()
-    this.loadRows()
+    await this.loadSpreadsheet()
+    await this.getOrCreateSheet()
+    await this.syncSheetHeaders()
+    await this.loadRows()
   }
 
   private async loadSpreadsheet(): Spreadsheet {
-    this.spreadsheet = getSpreadsheet(this.spreadsheetInfo)
+    this.spreadsheet = await getSpreadsheet(this.spreadsheetInfo)
   }
 
   /*
@@ -174,7 +170,12 @@ export class SheetTable<T extends tableData> extends Table<T> {
     if (!this.spreadsheet) return
     let sheet = this.spreadsheet.sheetsByTitle[this.name]
     if (!sheet) {
-      sheet = await this.spreadsheet.addSheet(this.name)
+      try {
+        sheet = await this.spreadsheet.addSheet({ title: this.name })
+      } catch (err) {
+        console.log(`Sheet Creation Failed for ${this.name}`)
+        console.log(err)
+      }
     }
     this.sheet = sheet
   }
@@ -185,14 +186,28 @@ export class SheetTable<T extends tableData> extends Table<T> {
    * Must manually delete old
    */
   private syncSheetHeaders = async () => {
-    const savedHeaders = this.sheet.headerValues
-    const newHeaders: string[] = []
+    try {
+      // try to get the header row and check all of it's values
+      await this.sheet.loadHeaderRow()
+      this.sheet.headerValues.forEach((header) => sheetHeaders.push(header))
+    } catch (err) {
+      // if the error was about no values in the header row, it's okay because we are about to fill them!
+      if (
+        !(
+          err instanceof Error &&
+          err.message ==
+            'No values in the header row - fill the first row with header values before trying to interact with rows'
+        )
+      )
+        throw err // something wack happened
+    }
+    const sheetHeaders: Array<string> = []
     this.headers.forEach((header) => {
-      if (!savedHeaders?.includes(header)) {
-        newHeaders.push(header)
+      if (!sheetHeaders?.includes(header)) {
+        sheetHeaders.push(header)
       }
     })
-    await this.sheet.setHeaderRow(newHeaders)
+    await this.sheet.setHeaderRow(sheetHeaders)
   }
   /*
    * Reload rows
