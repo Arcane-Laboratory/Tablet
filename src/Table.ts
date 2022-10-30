@@ -1,4 +1,6 @@
+import { stringify } from 'querystring'
 import { tableData } from '../types/tableTypes'
+import { tableSummary } from './utilities'
 
 abstract class Table<T extends tableData> {
   public static all = new Map<string, Table<tableData>>()
@@ -7,6 +9,7 @@ abstract class Table<T extends tableData> {
   }
   public abstract numEntries(): number
   public abstract toArray(): Array<T>
+
   public abstract fetch(id: string, forceRefresh?: boolean): Promise<T | null>
   public abstract fetchAll(forceRefresh?: boolean): Promise<Array<T> | false>
   public abstract crupdate(entry: T): Promise<T | false>
@@ -27,28 +30,15 @@ abstract class Table<T extends tableData> {
     return entry.id !== undefined
   }
 
-  private static idDataStringify(datum: {
-    id: string
-    name?: string
-    size?: number
-    description?: string
-  }): string {
-    let str = ''
-
-    if (datum.name) str += datum.name
-    if (datum.size) str += '\n   size: ' + datum.size
-    if (datum.description) str += '\n  > ' + datum.description
-    return str
+  protected summary: tableSummary = {
+    ERRORS: { value: 0, verboseOnly: false },
+    CREATED_ENTRIES: { value: 0, verboseOnly: false },
+    READ_ENTRIES: { value: 0, verboseOnly: false },
+    UPDATED_ENTRIES: { value: 0, verboseOnly: false },
+    DELETED_ENTRIES: { value: 0, verboseOnly: false },
   }
 
-  protected summary: summary = {
-    ERRORS: {
-      value: 0,
-      verboseOnly: false,
-    },
-  }
-
-  protected generateSummary(): summary {
+  protected generateSummary(): tableSummary {
     return this.summary
   }
   public static getSummary(verbose?: false): string {
@@ -57,12 +47,12 @@ abstract class Table<T extends tableData> {
     Table.all.forEach((table) => {
       const tableSummary = table.generateSummary()
       info.push(
-        `  ${table.name} [${Object.getPrototypeOf(table).constructor.name}]:`
+        ` ${table.name} [${Object.getPrototypeOf(table).constructor.name}]`
       )
       Object.keys(tableSummary).forEach((key) => {
         const entry = tableSummary[key]
         if ((entry.verboseOnly === false || verbose) && entry.value != 0)
-          info.push(`    ${key}: ${entry.value}`)
+          info.push(`   ${key}: ${entry.value}`)
       })
     })
     return info.join('\n ')
@@ -70,13 +60,3 @@ abstract class Table<T extends tableData> {
 }
 
 export { Table, tableData }
-
-interface summaryEntry {
-  value: string | number | boolean
-  verboseOnly?: boolean
-}
-
-interface summary {
-  [key: string]: summaryEntry
-  ERRORS: { value: number; verboseOnly: false }
-}
