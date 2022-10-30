@@ -1,9 +1,9 @@
-import { stringify } from 'querystring'
 import { tableData } from '../types/tableTypes'
 import { tableSummary } from './utilities'
 
 abstract class Table<T extends tableData> {
   public static all = new Map<string, Table<tableData>>()
+  public abstract loadPromise: Promise<boolean>
   constructor(public readonly name: string) {
     const extantTable = Table.all.get(name)
     if (extantTable)
@@ -30,6 +30,7 @@ abstract class Table<T extends tableData> {
   }
 
   public async clone(targetTable: Table<T>) {
+    await this.loadPromise
     const crupdates = this.toArray().map((entry) => {
       targetTable.crupdate(entry)
     })

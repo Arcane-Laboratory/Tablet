@@ -16,9 +16,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
   private spreadsheet!: Spreadsheet
   private sheet!: Sheet
+  public loadPromise: Promise<boolean>
   private rows!: Array<Row>
   private headers = ['id', 'createdAt', 'lastUpdate']
-  private loadPromise: Promise<boolean>
   constructor(
     public readonly name: string, // also used as spreadsheet tab name
     public readonly spreadsheetInfo: spreadsheetInfo,

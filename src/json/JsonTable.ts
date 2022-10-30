@@ -24,6 +24,7 @@ interface jsonStore<T extends tableData> {
 
 class JsonTable<T extends tableData> extends Table<T> {
   public readonly dirPath: PathLike
+  public loadPromise: Promise<boolean>
   public readonly filePath: PathLike
   private cache: Map<string, T> = new Map<string, T>()
   private bufferWrite = false
@@ -33,7 +34,10 @@ class JsonTable<T extends tableData> extends Table<T> {
     this.dirPath = fileDir == 'DEFAULT' ? DEFAULT_DIRECTORY : fileDir
     this.filePath = path.join(this.dirPath.toString(), name + fileExt)
     this.summary['FILE'] = { value: this.filePath.toString() }
-    this.loadTable()
+    this.loadPromise = new Promise((resolve) => {
+      this.loadTable()
+      resolve(true)
+    })
   }
   public numEntries(): number {
     return this.cache.size
