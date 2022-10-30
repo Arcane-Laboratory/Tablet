@@ -79,7 +79,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
         return true
       } catch (err) {
         console.log(err)
-        this.summary.ERRORS++
+        this.summary.ERRORS.value++
         return true
       }
     } else {
@@ -97,7 +97,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
       this.rows = await this.sheet.getRows()
       return true
     } catch (err) {
-      this.summary.ERRORS++
+      this.summary.ERRORS.value++
+
       console.log(err)
       return false
     }
@@ -176,7 +177,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
         sheet = await this.spreadsheet.addSheet({ title: this.name })
       } catch (err) {
         console.log(`Sheet Creation Failed for ${this.name}`)
-        this.summary.ERRORS++
+        this.summary.ERRORS.value++
+
         console.log(err)
       }
     }
@@ -219,7 +221,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
     try {
       this.rows = await this.sheet.getRows()
     } catch (err) {
-      this.summary.ERRORS++
+      this.summary.ERRORS.value++
+
       console.log(err)
     }
   }

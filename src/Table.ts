@@ -41,14 +41,17 @@ abstract class Table<T extends tableData> {
     return str
   }
 
-  protected summary: tableSummary = {
-    ERRORS: 0,
+  protected summary: summary = {
+    ERRORS: {
+      value: 0,
+      verboseOnly: false,
+    },
   }
 
-  protected generateSummary(): tableSummary {
+  protected generateSummary(): summary {
     return this.summary
   }
-  public static getSummary(): string {
+  public static getSummary(verbose?: false): string {
     const info = [`Table Summary:`]
     info.push(`${Table.all.size} tables`)
     Table.all.forEach((table) => {
@@ -57,8 +60,9 @@ abstract class Table<T extends tableData> {
         `  ${table.name} [${Object.getPrototypeOf(table).constructor.name}]:`
       )
       Object.keys(tableSummary).forEach((key) => {
-        if (tableSummary[key] != 0)
-          info.push(`    ${key}: ${tableSummary[key]}`)
+        const entry = tableSummary[key]
+        if ((entry.verboseOnly === false || verbose) && entry.value != 0)
+          info.push(`    ${key}: ${entry.value}`)
       })
     })
     return info.join('\n ')
@@ -67,7 +71,12 @@ abstract class Table<T extends tableData> {
 
 export { Table, tableData }
 
-interface tableSummary {
-  ERRORS: number
-  [key: string]: string | number
+interface summaryEntry {
+  value: string | number | boolean
+  verboseOnly?: boolean
+}
+
+interface summary {
+  [key: string]: summaryEntry
+  ERRORS: { value: number; verboseOnly: false }
 }
