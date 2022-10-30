@@ -82,7 +82,7 @@ class JsonTable<T extends tableData> extends Table<T> {
     if (!this.validate(entry)) throw `${entry} is not valid`
     this.cache.set(entry.id, entry)
     this.bufferWrite = true
-    this.summary.UPDATED_ENTRIES.value++
+    this.summary.UPDATES.value++
     return entry
   }
 
@@ -140,7 +140,7 @@ class JsonTable<T extends tableData> extends Table<T> {
       fileOut.data.forEach((entry) => {
         this.crupdate(entry)
       })
-      this.summary.READ_ENTRIES.value = fileOut.data.length
+      this.summary.READS.value = fileOut.data.length
 
       return this
     } catch (err) {

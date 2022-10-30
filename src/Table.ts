@@ -32,10 +32,10 @@ abstract class Table<T extends tableData> {
 
   protected summary: tableSummary = {
     ERRORS: { value: 0, verboseOnly: false },
-    CREATED_ENTRIES: { value: 0, verboseOnly: false },
-    READ_ENTRIES: { value: 0, verboseOnly: false },
-    UPDATED_ENTRIES: { value: 0, verboseOnly: false },
-    DELETED_ENTRIES: { value: 0, verboseOnly: false },
+    CREATIONS: { value: 0, verboseOnly: false },
+    READS: { value: 0, verboseOnly: false },
+    UPDATES: { value: 0, verboseOnly: false },
+    DELETIONS: { value: 0, verboseOnly: false },
   }
 
   protected generateSummary(): tableSummary {
