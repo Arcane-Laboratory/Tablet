@@ -1,13 +1,13 @@
 import { Entity } from './Entity'
 import { Table } from './Table'
 
-const tableToString = (tableName: string) => {
+const tableToString = (tableName: string): string => {
   const table = Table.all.get(tableName)
   if (table == undefined) return 'undefined'
   else return table.toString()
 }
 
-const tableList = () => {
+const tableList = (): string => {
   const keys: Array<string> = []
   Table.all.forEach((table, key) => {
     keys.push(key)

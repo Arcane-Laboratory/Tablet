@@ -40,6 +40,34 @@ abstract class Table<T extends tableData> {
     if (datum.description) str += '\n  > ' + datum.description
     return str
   }
+
+  protected summary: tableSummary = {
+    ERRORS: 0,
+  }
+
+  protected generateSummary(): tableSummary {
+    return this.summary
+  }
+  public static getSummary(): string {
+    const info = [`Table Summary:`]
+    info.push(`${Table.all.size} tables`)
+    Table.all.forEach((table) => {
+      const tableSummary = table.generateSummary()
+      info.push(
+        `  ${table.name} [${Object.getPrototypeOf(table).constructor.name}]:`
+      )
+      Object.keys(tableSummary).forEach((key) => {
+        if (tableSummary[key] != 0)
+          info.push(`    ${key}: ${tableSummary[key]}`)
+      })
+    })
+    return info.join('\n ')
+  }
 }
 
 export { Table, tableData }
+
+interface tableSummary {
+  ERRORS: number
+  [key: string]: string | number
+}

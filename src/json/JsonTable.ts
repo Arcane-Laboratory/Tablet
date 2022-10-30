@@ -32,6 +32,7 @@ class JsonTable<T extends tableData> extends Table<T> {
     super(name)
     this.dirPath = fileDir == 'DEFAULT' ? DEFAULT_DIRECTORY : fileDir
     this.filePath = path.join(this.dirPath.toString(), name + fileExt)
+    this.summary['FILE'] = this.filePath.toString()
     this.loadTable()
   }
   public numEntries(): number {
@@ -92,6 +93,7 @@ class JsonTable<T extends tableData> extends Table<T> {
         successfulCrupdates.push(success)
       } catch (err) {
         console.log(err)
+        this.summary.ERRORS++
       }
     })
     return successfulCrupdates
@@ -120,10 +122,9 @@ class JsonTable<T extends tableData> extends Table<T> {
 
     try {
       writeFileSync(this.filePath, stringifiedTable)
-      console.log(
-        `saved table '${this.name}' with ${this.numEntries()} entries`
-      )
+      this.summary['SAVED_ENTRIES'] = this.numEntries()
     } catch (err) {
+      this.summary.ERRORS++
       console.log(err)
     }
   }
@@ -138,9 +139,7 @@ class JsonTable<T extends tableData> extends Table<T> {
       fileOut.data.forEach((entry) => {
         this.crupdate(entry)
       })
-      console.log(
-        `TABLET: JsonTable read ${fileOut.data.length} entries from file ${this.filePath}`
-      )
+      this.summary['READ_ENTRIES'] = fileOut.data.length
       return this
     } catch (err) {
       if (err instanceof Error) {
@@ -158,6 +157,7 @@ class JsonTable<T extends tableData> extends Table<T> {
         } else {
           console.log(err.message.substring(0, 10))
           console.log(err.name.substring(0, 10))
+          this.summary.ERRORS++
           throw err
         }
       } else throw err
