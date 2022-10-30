@@ -47,7 +47,9 @@ class JsonTable<T extends tableData> extends Table<T> {
     this.cache.forEach((value) => {
       arr.push(value)
     })
-    arr.sort((a, b) => a.id.localeCompare(b.id))
+    arr.sort((a, b) => {
+      return a.id.toString().localeCompare(b.id.toString())
+    })
     return arr
   }
 

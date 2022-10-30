@@ -76,7 +76,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private async update(entry: T, changes = false): Promise<true | null> {
     await this.loadPromise
-    const index = this.rows.findIndex((row) => row.id == entry.id)
+    const index = this.findRowIndexById(entry.id)
+
     if (index === -1) return null
 
     if (this.hasChanges(entry)) changes = true
@@ -100,11 +101,12 @@ export class SheetTable<T extends tableData> extends Table<T> {
   public async delete(entry: T): Promise<boolean> {
     await this.loadPromise
     const id = entry.id
-    const found = this.rows?.find((row) => row.id == id)
-    if (!found) return false
+    const index = this.findRowIndexById(id)
+    if (!(index == -1)) return false
+    const foundEntry = this.rows[index]
     await limiter.removeTokens(1)
     try {
-      await found.delete()
+      await foundEntry.delete()
       this.rows = await this.sheet.getRows()
       return true
     } catch (err) {
@@ -120,9 +122,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
     forceRefresh?: boolean | undefined
   ): Promise<T | null> {
     await this.loadPromise
-    const found = this.rows?.find((row) => row.id === id)
-    if (!found) return null
-    return this.parseRow(found)
+    const index = this.findRowIndexById(id)
+    if (index == -1) return null
+    return this.parseRow(this.rows[index])
   }
 
   public async fetchAll(forceRefresh?: boolean | undefined): Promise<Array<T>> {
@@ -154,7 +156,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private hasChanges(entry: T, index = -1): boolean {
     let changes = false
-    if (index === -1) index = this.rows.findIndex((row) => row.id === entry.id)
+    if (index === -1) index = this.findRowIndexById(entry.id)
     if (index === -1) return false
 
     this.headers.forEach((header) => {
@@ -262,5 +264,12 @@ export class SheetTable<T extends tableData> extends Table<T> {
       }
     })
     return parsedObject as T
+  }
+
+  private findRowIndexById = (id: string): number => {
+    const index = this.rows.findIndex(
+      (row) => parseVal(row.id).toString() == id.toString()
+    )
+    return index
   }
 }

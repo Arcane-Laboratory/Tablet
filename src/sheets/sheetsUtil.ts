@@ -45,7 +45,7 @@ const load = async (spreadsheetInfo: spreadsheetInfo): Promise<Spreadsheet> => {
   return spreadsheet
 }
 
-const parseVal = (val: string) => {
+const parseVal = (val: string): number | string | boolean => {
   let parsedVal: unknown
   try {
     parsedVal = JSON.parse(val)
@@ -54,7 +54,7 @@ const parseVal = (val: string) => {
   }
   if (parsedVal == 'TRUE') parsedVal = true
   if (parsedVal == 'FALSE') parsedVal = false
-  return parsedVal
+  return parsedVal as any
 }
 
 export { gKey, spreadsheetInfo, limiter, loadSpreadsheet, parseVal }

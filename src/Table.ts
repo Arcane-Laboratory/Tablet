@@ -31,9 +31,15 @@ abstract class Table<T extends tableData> {
 
   public async clone(targetTable: Table<T>) {
     await this.loadPromise
+    await targetTable.loadPromise
     const crupdates = this.toArray().map((entry) => {
       targetTable.crupdate(entry)
     })
+    console.log(
+      `cloning ${this.numEntries()} entries from ${this.name} into ${
+        targetTable.name
+      }`
+    )
     return Promise.all(crupdates)
   }
 
