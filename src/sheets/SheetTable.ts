@@ -56,9 +56,10 @@ export class SheetTable<T extends tableData> extends Table<T> {
   private async add(entry: T): Promise<boolean> {
     await this.loadPromise
     await limiter.removeTokens(1)
+    const now = nowString()
     try {
       await this.sheet.addRow(
-        { ...entry, lastUpdate: nowString() },
+        { ...entry, lastUpdate: now, createdAt: now },
         { raw: true, insert: false }
       )
       this.rows = await this.sheet.getRows()
