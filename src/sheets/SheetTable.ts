@@ -11,7 +11,6 @@ import {
   rowToData,
   spreadsheetInfo,
 } from './sheetsUtil'
-import { isError } from 'util'
 
 export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
@@ -19,6 +18,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
   private sheet!: Sheet
   private rows!: Array<Row>
   private headers = ['id', 'createdAt', 'lastUpdate']
+  private loadPromise: Promise<boolean>
   constructor(
     public readonly name: string, // also used as spreadsheet tab name
     public readonly spreadsheetInfo: spreadsheetInfo,
@@ -30,8 +30,10 @@ export class SheetTable<T extends tableData> extends Table<T> {
       if (this.headers.find((header) => header == key) == undefined)
         this.headers.push(key)
     })
-    this.load()
-    this.summary['SPREADSHEET'] = this.spreadsheet.title
+    this.loadPromise = this.load()
+    this.loadPromise.then(() => {
+      this.summary['SPREADSHEET'] = this.spreadsheet.title
+    })
   }
 
   public async crupdate(entry: T, changes = false): Promise<T | false> {
@@ -52,6 +54,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   private async add(entry: T): Promise<boolean> {
+    await this.loadPromise
     await limiter.removeTokens(1)
     try {
       await this.sheet.addRow(
@@ -66,6 +69,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   private async update(entry: T, changes = false): Promise<true | null> {
+    await this.loadPromise
     const index = this.rows.findIndex((row) => row.id == entry.id)
     if (index === -1) return null
 
@@ -88,6 +92,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   public async delete(entry: T): Promise<boolean> {
+    await this.loadPromise
     const id = entry.id
     const found = this.rows?.find((row) => row.id == id)
     if (!found) return false
@@ -155,14 +160,11 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   private async load() {
-    await this.loadSpreadsheet()
-    await this.getOrCreateSheet()
+    this.spreadsheet = await getSpreadsheet(this.spreadsheetInfo)
+    this.sheet = await this.getOrCreateSheet()
     await this.syncSheetHeaders()
     await this.loadRows()
-  }
-
-  private async loadSpreadsheet(): Spreadsheet {
-    this.spreadsheet = await getSpreadsheet(this.spreadsheetInfo)
+    return true
   }
 
   /*
@@ -170,7 +172,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
    * Create a new sheet if not found
    */
   private getOrCreateSheet = async () => {
-    if (!this.spreadsheet) return
+    if (!this.spreadsheet)
+      throw new Error(`can't get a sheet without spreadsheet ${this.name}`)
     let sheet = this.spreadsheet.sheetsByTitle[this.name]
     if (!sheet) {
       try {
@@ -182,7 +185,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
         console.log(err)
       }
     }
-    this.sheet = sheet
+    return sheet
   }
 
   /*
@@ -191,6 +194,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
    * Must manually delete old
    */
   private syncSheetHeaders = async () => {
+    const sheetHeaders: Array<string> = []
+
     try {
       // try to get the header row and check all of it's values
       await this.sheet.loadHeaderRow()
@@ -206,13 +211,13 @@ export class SheetTable<T extends tableData> extends Table<T> {
       )
         throw err // something wack happened
     }
-    const sheetHeaders: Array<string> = []
     this.headers.forEach((header) => {
       if (!sheetHeaders?.includes(header)) {
         sheetHeaders.push(header)
       }
     })
     await this.sheet.setHeaderRow(sheetHeaders)
+    return true
   }
   /*
    * Reload rows
@@ -220,10 +225,11 @@ export class SheetTable<T extends tableData> extends Table<T> {
   private loadRows = async () => {
     try {
       this.rows = await this.sheet.getRows()
+      return true
     } catch (err) {
       this.summary.ERRORS.value++
-
       console.log(err)
+      return false
     }
   }
 }

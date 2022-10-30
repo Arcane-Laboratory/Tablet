@@ -24,28 +24,32 @@ const parseRow = <T extends tableData>(row: Row): T => {
 
 const limiter = new RateLimiter({ tokensPerInterval: 1, interval: 1000 })
 
-const spreadsheets: Array<Spreadsheet> = []
+const spreadsheetIdMap = new Map<string, Promise<Spreadsheet>>()
 
 const loadSpreadsheet = async (
   spreadsheetInfo: spreadsheetInfo
 ): Promise<Spreadsheet> => {
-  const { gKey, spreadsheetId } = spreadsheetInfo
-  const loadedSpreadsheet = spreadsheets.find(
-    (sheet) => sheet.spreadsheetId == spreadsheetId
-  )
-  if (loadedSpreadsheet) return loadSpreadsheet
+  const id = spreadsheetInfo.spreadsheetId
+  const loadedSpreadsheet = spreadsheetIdMap.get(id)
+  if (loadedSpreadsheet) return loadedSpreadsheet
 
-  console.log(`loading gSheet: ${spreadsheetId}`)
-  const spreadsheet = new Spreadsheet(spreadsheetId)
   try {
-    await spreadsheet.useServiceAccountAuth(gKey)
-    await spreadsheet.loadInfo()
-    spreadsheets.push(spreadsheet)
-    console.log(`spreadsheetLoader connected to ${spreadsheet.title}`)
-    return spreadsheet
+    console.log(`loading ${id}`)
+    const loadPromise = load(spreadsheetInfo)
+    spreadsheetIdMap.set(id, loadPromise)
+    return loadPromise
   } catch (err) {
-    console.log('err')
+    if (err) console.log(err)
   }
+}
+
+const load = async (spreadsheetInfo: spreadsheetInfo): Promise<Spreadsheet> => {
+  console.log('triggering load')
+  const spreadsheet = new Spreadsheet(spreadsheetInfo.spreadsheetId)
+  await spreadsheet.useServiceAccountAuth(spreadsheetInfo.gKey)
+  await spreadsheet.loadInfo()
+  console.log(`connected to ${spreadsheet.title}`)
+  return spreadsheet
 }
 
 export {
