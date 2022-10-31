@@ -8,6 +8,13 @@ interface loadFactory<T extends tableData, U extends Entity<T>> {
   (record: T): Promise<U>
 }
 
+/**
+ * abstract class Entity can be implemented to make classes integrated with a Table
+ * the generic T is the type of data stored in and read from the table
+ * extended classes must also initialize themselves by calling their
+ *   .registerEntity method
+ *
+ */
 export abstract class Entity<T extends tableData> implements tableData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static tables = new Map<entityConstructor<any>, Table<any>>()
@@ -22,6 +29,10 @@ export abstract class Entity<T extends tableData> implements tableData {
 
   public readonly id: string
 
+  /**
+   *
+   * @param id the id of a given entity, if none exists, one is assigned
+   */
   constructor(id?: string) {
     if (id) this.id = id
     else this.id = randomUUID()
@@ -34,8 +45,17 @@ export abstract class Entity<T extends tableData> implements tableData {
     cache.push(this)
   }
 
+  /**
+   * generate a record to be stored in a Table
+   */
   public abstract generateRecord(): T
 
+  /**
+   *
+   * @param table a Table which will store this Entity's records
+   * @param loadFactory a function which takes a record and returns an instance of the Entity
+   * @returns true if everything worked
+   */
   public static registerEntity<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     table: Table<T>,
@@ -51,6 +71,11 @@ export abstract class Entity<T extends tableData> implements tableData {
     return true
   }
 
+  /**
+   *
+   * @param id the id of the entity to fetch
+   * @returns a promise, which will be the proper entity if it's found and null otherwise
+   */
   static async fetch<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     id: string
@@ -62,6 +87,10 @@ export abstract class Entity<T extends tableData> implements tableData {
     return loadFactory(record)
   }
 
+  /**
+   *
+   * @returns a promise of an array of all entities from the table
+   */
   static async fetchAll<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U
   ): Promise<Array<U> | null> {
@@ -74,6 +103,11 @@ export abstract class Entity<T extends tableData> implements tableData {
     )
   }
 
+  /**
+   *
+   * @param filterFn a function used to filter entity records
+   * @returns an array of instantiated entities with a record which matches properly
+   */
   static async filterEntity<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     filterFn: (entity: T) => boolean
@@ -88,6 +122,11 @@ export abstract class Entity<T extends tableData> implements tableData {
     return newEntities
   }
 
+  /**
+   *
+   * @param findFn a function used to find an entity record
+   * @returns an instantiated entity with a record matching the findFn
+   */
   static async findEntity<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     findFn: (entity: T) => boolean
@@ -108,18 +147,25 @@ export abstract class Entity<T extends tableData> implements tableData {
     return table.find(findFn)
   }
 
+  /**
+   * CReate or UPDATE a specific entity's record on the table
+   * @param record the record to create or update on a table
+   * @returns the record that has been updated
+   */
   public static async crupdate<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     record: T
-  ): Promise<U | null> {
+  ): Promise<T | null> {
     const table = Entity.findTable(this)
     const savedRecord = await table.crupdate(record)
-    if (savedRecord) {
-      const loadFactory = Entity.findLoadFactory<T, U>(this)
-      return loadFactory(savedRecord)
-    } else return null
+    if (savedRecord) return savedRecord
+    else return null
   }
 
+  /**
+   * save this to the entity table
+   * @returns the id of the written entity's record if successful, null otherwise
+   */
   async save(): Promise<string | null> {
     const ctor = Entity.ctorOf(this)
     const table = Entity.findTable(ctor)
@@ -129,6 +175,10 @@ export abstract class Entity<T extends tableData> implements tableData {
     else return null
   }
 
+  /**
+   *
+   * @returns a list of all instantiated entities
+   */
   public static entityCacheList(): Array<{
     ctor: entityConstructor<any>
     cacheSize: number
@@ -139,15 +189,22 @@ export abstract class Entity<T extends tableData> implements tableData {
     })
     return ctors
   }
-  3
 
+  /**
+   *
+   * @returns the number of entities in the table cache
+   */
   public static numCached<T extends tableData>(
     this: new (...args: any[]) => Entity<T>
   ): number {
     return Entity.findCache(this).length
   }
 
-  /** */
+  /**
+   * find a table belonging to a child class given a child class
+   * @param entityConstructor the child class
+   * @returns the table which stores that child class's information
+   */
   private static findTable<T extends tableData>(
     entityConstructor: entityConstructor<T>
   ): Table<T> {
@@ -156,6 +213,11 @@ export abstract class Entity<T extends tableData> implements tableData {
     else throw `no table exists with constructor ${entityConstructor.name}`
   }
 
+  /**
+   * find a cache belonging to a child class given a child class
+   * @param entityConstructor the child class
+   * @returns the cache which stores instance of the child class
+   */
   private static findCache<T extends tableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): Array<U> {
@@ -167,6 +229,11 @@ export abstract class Entity<T extends tableData> implements tableData {
       ).constructor.toString()}`
   }
 
+  /**
+   * find the loadFactory of a child class
+   * @param entityConstructor the child class
+   * @returns the load factory
+   */
   private static findLoadFactory<T extends tableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): loadFactory<T, U> {
@@ -178,6 +245,11 @@ export abstract class Entity<T extends tableData> implements tableData {
       ).constructor.toString()}`
   }
 
+  /**
+   * extracts a constructor from an entity
+   * @param entity the object to get the constructor of
+   * @returns
+   */
   private static ctorOf = <T extends tableData, U extends Entity<T>>(
     entity: U
   ): entityConstructor<T> => {

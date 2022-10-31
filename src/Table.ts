@@ -29,6 +29,11 @@ abstract class Table<T extends tableData> {
     return str
   }
 
+  /**
+   *
+   * @param targetTable the table to clone this one into
+   * @returns a promise of all crupdate calls to the target Table
+   */
   public async clone(targetTable: Table<T>) {
     await this.loadPromise
     await targetTable.loadPromise
@@ -43,6 +48,11 @@ abstract class Table<T extends tableData> {
     return Promise.all(crupdates)
   }
 
+  /**
+   *
+   * @param entry an entry on a table
+   * @returns true if the entry is valid
+   */
   protected validate(entry: T): boolean {
     return entry.id !== undefined
   }
@@ -58,6 +68,12 @@ abstract class Table<T extends tableData> {
   protected generateSummary(): tableSummary {
     return this.summary
   }
+
+  /**
+   *
+   * @param verbose if true, shows everything, otherwise only shows impactful items
+   * @returns a string, the summary of what Table has done so far
+   */
   public static getSummary(verbose?: false): string {
     const info = [`Table Summary:`]
     info.push(`${Table.all.size} tables`)

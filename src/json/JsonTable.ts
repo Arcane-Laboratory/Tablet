@@ -30,6 +30,11 @@ class JsonTable<T extends tableData> extends Table<T> {
   private cache: Map<string, T> = new Map<string, T>()
   private bufferWrite = false
   private ioBufferInterval = setInterval(() => this.ioBuffer(), 1000)
+  /**
+   *
+   * @param name the name of the table, this is used to name the local file
+   * @param fileDir where to store the table data
+   */
   constructor(public readonly name: string, fileDir: PathLike | 'DEFAULT') {
     super(name)
     this.dirPath = fileDir == 'DEFAULT' ? DEFAULT_DIRECTORY : fileDir
@@ -40,9 +45,16 @@ class JsonTable<T extends tableData> extends Table<T> {
       resolve(true)
     })
   }
+  /**
+   * @returns how many entries are in this table
+   */
   public numEntries(): number {
     return this.cache.size
   }
+
+  /**
+   * @returns an array of this table's entries
+   */
   public toArray() {
     const arr: Array<T> = []
     this.cache.forEach((value) => {
@@ -54,6 +66,11 @@ class JsonTable<T extends tableData> extends Table<T> {
     return arr
   }
 
+  /**
+   * filters the table by a given filter function
+   * @param filter the filter function
+   * @returns an array of matching entries
+   */
   public async filter(filter: (entry: T) => boolean): Promise<Array<T>> {
     const entries: Array<T> = []
     this.cache.forEach((element) => {
@@ -62,6 +79,11 @@ class JsonTable<T extends tableData> extends Table<T> {
     return entries
   }
 
+  /**
+   * find a given entry based on a function
+   * @param finder the function used to evaluate entries
+   * @returns an entry matching the function
+   */
   public async find(finder: (entry: T) => boolean): Promise<T | undefined> {
     let found: T | undefined
     this.cache.forEach((entry) => {
@@ -71,20 +93,31 @@ class JsonTable<T extends tableData> extends Table<T> {
     return found
   }
 
+  /**
+   *
+   * @param id the id of the record to fetch
+   * @param forceRefresh if the table should be reinstantiated, does nothing for json
+   * @returns fthe matching entry, or null if no id matched
+   */
   public async fetch(id: string, forceRefresh?: boolean): Promise<T | null> {
     const cachedVal = this.cache.get(id)
     if (cachedVal !== undefined) return cachedVal
     return null
   }
 
+  /**
+   *
+   * @returns an array of all values in the table
+   */
   public async fetchAll(): Promise<Array<T>> {
     return Array.from(this.cache.values())
   }
 
-  public async generateId(): Promise<string> {
-    return '00' + this.name + this.cache.size
-  }
-
+  /**
+   * CReates or UPDATEs an entry in the table
+   * @param entry the entry to crupdate
+   * @returns the entry, now updated in the table
+   */
   public async crupdate(entry: T) {
     if (!this.validate(entry)) throw `${entry} is not valid`
     this.cache.set(entry.id, entry)
@@ -93,6 +126,11 @@ class JsonTable<T extends tableData> extends Table<T> {
     return entry
   }
 
+  /**
+   * CReates or UPDATEs multiple entries
+   * @param entries the entries to crupdate
+   * @returns an array of successfully crupdated entries
+   */
   public async crupdates(entries: Array<T>) {
     const successfulCrupdates: Array<T> = []
     entries.forEach(async (entry) => {
@@ -107,6 +145,11 @@ class JsonTable<T extends tableData> extends Table<T> {
     return successfulCrupdates
   }
 
+  /**
+   *
+   * @param entry the entry to delete
+   * @returns true if the deletion was successful
+   */
   public async delete(entry: T) {
     this.bufferWrite = true
     return this.cache.delete(entry.id)
