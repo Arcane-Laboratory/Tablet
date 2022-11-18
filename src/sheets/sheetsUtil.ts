@@ -27,7 +27,7 @@ const loadSpreadsheet = async (
   if (loadedSpreadsheet) return loadedSpreadsheet
 
   try {
-    console.log(`loading ${id}`)
+    console.log(` Tablet: Loading spreadsheet '${id}'`)
     const loadPromise = load(spreadsheetInfo)
     spreadsheetIdMap.set(id, loadPromise)
     return loadPromise
@@ -37,11 +37,10 @@ const loadSpreadsheet = async (
 }
 
 const load = async (spreadsheetInfo: spreadsheetInfo): Promise<Spreadsheet> => {
-  console.log('triggering load')
   const spreadsheet = new Spreadsheet(spreadsheetInfo.spreadsheetId)
   await spreadsheet.useServiceAccountAuth(spreadsheetInfo.gKey)
   await spreadsheet.loadInfo()
-  console.log(`connected to ${spreadsheet.title}`)
+  console.log(` Tablet: Connected to spreadsheet '${spreadsheet.title}'`)
   return spreadsheet
 }
 

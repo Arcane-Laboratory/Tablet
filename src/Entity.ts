@@ -62,9 +62,13 @@ export abstract class Entity<T extends tableData> implements tableData {
     loadFactory: loadFactory<T, U>
   ): boolean {
     if (table == undefined)
-      throw `TABLET_ENTITY.registerEntity: ${this.name} table can't be undefined`
+      throw new Error(
+        `TABLET_ENTITY.registerEntity: ${this.name} table can't be undefined`
+      )
     if (loadFactory == undefined)
-      throw `TABLET_ENTITY.registerEntity: ${this.name} loadFactory can't be undefined`
+      throw new Error(
+        `TABLET_ENTITY.registerEntity: ${this.name} loadFactory can't be undefined`
+      )
     Entity.tables.set(this, table)
     Entity.caches.set(this, [])
     Entity.loadFactories.set(this, loadFactory)
@@ -210,7 +214,10 @@ export abstract class Entity<T extends tableData> implements tableData {
   ): Table<T> {
     const table = Entity.tables.get(entityConstructor)
     if (table) return table
-    else throw `no table exists with constructor ${entityConstructor.name}`
+    else
+      throw new Error(
+        `TabletError: Entity.findTable\nno table exists with constructor ${entityConstructor.name}`
+      )
   }
 
   /**

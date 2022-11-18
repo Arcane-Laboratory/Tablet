@@ -13,10 +13,10 @@ interface summary {
 interface tableSummary extends summary {
   [key: string]: summaryEntry
   ERRORS: { value: number; verboseOnly: false }
-  CREATIONS: { value: number; verboseOnly: false }
-  READS: { value: number; verboseOnly: false }
-  UPDATES: { value: number; verboseOnly: false }
-  DELETIONS: { value: number; verboseOnly: false }
+  CREATIONS: { value: number; verboseOnly: boolean }
+  READS: { value: number; verboseOnly: boolean }
+  UPDATES: { value: number; verboseOnly: boolean }
+  DELETIONS: { value: number; verboseOnly: boolean }
 }
 
 export { nowString, summary, summaryEntry, tableSummary }

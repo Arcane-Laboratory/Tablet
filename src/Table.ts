@@ -34,17 +34,18 @@ abstract class Table<T extends tableData> {
    * @param targetTable the table to clone this one into
    * @returns a promise of all crupdate calls to the target Table
    */
-  public async clone(targetTable: Table<T>) {
+  public async clone(targetTable: Table<T>, verbose?: boolean) {
     await this.loadPromise
     await targetTable.loadPromise
     const crupdates = this.toArray().map((entry) => {
       targetTable.crupdate(entry)
     })
-    console.log(
-      `cloning ${this.numEntries()} entries from ${this.name} into ${
-        targetTable.name
-      }`
-    )
+    if (verbose)
+      console.log(
+        ` Tablet: Cloning ${this.numEntries()} entries from ${this.name} into ${
+          targetTable.name
+        }`
+      )
     return Promise.all(crupdates)
   }
 
@@ -59,10 +60,10 @@ abstract class Table<T extends tableData> {
 
   protected summary: tableSummary = {
     ERRORS: { value: 0, verboseOnly: false },
-    CREATIONS: { value: 0, verboseOnly: false },
-    READS: { value: 0, verboseOnly: false },
-    UPDATES: { value: 0, verboseOnly: false },
-    DELETIONS: { value: 0, verboseOnly: false },
+    CREATIONS: { value: 0, verboseOnly: true },
+    READS: { value: 0, verboseOnly: true },
+    UPDATES: { value: 0, verboseOnly: true },
+    DELETIONS: { value: 0, verboseOnly: true },
   }
 
   protected generateSummary(): tableSummary {

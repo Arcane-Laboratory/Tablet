@@ -7,12 +7,12 @@ const tableToString = (tableName: string): string => {
   else return table.toString()
 }
 
-const tableList = (): string => {
+const tableList = (): Array<string> => {
   const keys: Array<string> = []
   Table.all.forEach((table, key) => {
     keys.push(key)
   })
-  return keys.join('\n')
+  return keys
 }
 
 const allEntities = () => {

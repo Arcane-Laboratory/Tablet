@@ -11,6 +11,7 @@ import {
   parseVal,
   spreadsheetInfo,
 } from './sheetsUtil'
+import { randomUUID } from 'crypto'
 
 export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
@@ -19,6 +20,12 @@ export class SheetTable<T extends tableData> extends Table<T> {
   public loadPromise: Promise<boolean>
   private rows!: Array<Row>
   private headers = ['id', 'createdAt', 'lastUpdate']
+  /**
+   *
+   * @param name the name of the table, used to identify a the proper tab on the spreadsheet
+   * @param spreadsheetInfo the info used for finding the spreadsheet, including it's id and an auth key
+   * @param exampleEntry an example entry on the sheet, only the object keys are used for creating the headers, this object is not saved
+   */
   constructor(
     public readonly name: string, // also used as spreadsheet tab name
     public readonly spreadsheetInfo: spreadsheetInfo,
@@ -35,8 +42,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
       this.summary['SPREADSHEET'] = this.spreadsheet.title
     })
   }
-
   public async crupdate(entry: T, changes = false): Promise<T | false> {
+    if (!entry.id) entry.id == randomUUID()
     const updateExisting = await this.update(entry, changes)
     if (updateExisting) return entry
     else {
