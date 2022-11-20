@@ -147,7 +147,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
   public async find(finder: (entry: T) => boolean): Promise<T | undefined> {
     await this.loadPromise
     const data = this.toArray()
-    return data.find(finder)
+    const foundData = data.find(finder)
+    return foundData
   }
   public numEntries(): number {
     return this.rows.length

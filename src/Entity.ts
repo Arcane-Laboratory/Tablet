@@ -85,10 +85,9 @@ export abstract class Entity<T extends tableData> implements tableData {
     id: string
   ): Promise<U | null> {
     const table = Entity.findTable<T>(this)
-    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const record = await table.fetch(id)
     if (record == null) return null
-    return loadFactory(record)
+    return await Entity.build<T, U>(record, this)
   }
 
   /**
@@ -99,11 +98,11 @@ export abstract class Entity<T extends tableData> implements tableData {
     this: new (...args: any[]) => U
   ): Promise<Array<U> | null> {
     const table = Entity.findTable<T>(this)
-    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const allRecords = await table.fetchAll()
     if (allRecords == false) return null
+
     return await Promise.all(
-      allRecords.map(async (record) => await loadFactory(record))
+      allRecords.map(async (record) => Entity.build<T, U>(record, this))
     )
   }
 
@@ -117,10 +116,16 @@ export abstract class Entity<T extends tableData> implements tableData {
     filterFn: (entity: T) => boolean
   ): Promise<Array<U>> {
     const table = Entity.findTable<T>(this)
-    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const records = await table.filter(filterFn)
     const newEntities = await Promise.all(
-      records.map(async (record) => await loadFactory(record))
+      records.map(async (record) => {
+        const cache = Entity.findCache<T, U>(this)
+        const foundEntity = cache.find(
+          (cachedEntity) => cachedEntity.id == record.id
+        )
+        if (foundEntity) return foundEntity
+        else return Entity.build<T, U>(record, this)
+      })
     )
 
     return newEntities
@@ -136,10 +141,9 @@ export abstract class Entity<T extends tableData> implements tableData {
     findFn: (entity: T) => boolean
   ): Promise<U | undefined> {
     const table = Entity.findTable<T>(this)
-    const loadFactory = Entity.findLoadFactory<T, U>(this)
     const record = await table.find(findFn)
     if (!record) return undefined
-    const newEntity = await loadFactory(record)
+    const newEntity = await Entity.build<T, U>(record, this)
     return newEntity
   }
 
@@ -261,5 +265,32 @@ export abstract class Entity<T extends tableData> implements tableData {
     entity: U
   ): entityConstructor<T> => {
     return Object.getPrototypeOf(entity).constructor
+  }
+
+  private static async build<T extends tableData, U extends Entity<T>>(
+    record: T,
+    ctor: entityConstructor<T>
+  ): Promise<U> {
+    const cache = Entity.findCache<T, U>(ctor)
+    const foundEntity = cache.find(
+      (cachedEntity) => cachedEntity.id == record.id
+    )
+    if (foundEntity) return foundEntity
+    if (record['name'] !== undefined)
+      console.log(`building Entity ${name} ${record['name']}`)
+    try {
+      const factory = Entity.findLoadFactory<T, U>(ctor)
+      const newEntity = await factory(record)
+      return newEntity
+    } catch (err) {
+      const str =
+        `TABLET_ERROR: ${ctor.name}.build\n` +
+        `failure loading recordId: ${record.id}`
+      // if (err instanceof Error) {
+      //   err.stack += str
+      //   throw err
+      // } else
+      throw new Error(str + '\n' + err)
+    }
   }
 }
