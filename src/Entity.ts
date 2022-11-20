@@ -19,7 +19,11 @@ export abstract class Entity<T extends tableData> implements tableData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static tables = new Map<entityConstructor<any>, Table<any>>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static caches = new Map<entityConstructor<any>, Array<Entity<any>>>()
+
+  private static caches = new Map<
+    entityConstructor<any>,
+    Map<string, Entity<any>>
+  >()
   private static loadFactories = new Map<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entityConstructor<any>,
@@ -34,15 +38,15 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param id the id of a given entity, if none exists, one is assigned
    */
   constructor(id?: string) {
-    if (id) this.id = id
-    else this.id = randomUUID()
+    id ??= randomUUID()
+    this.id = id
     // Ensure that Entity Subclass has been registered
     const ctor = Entity.ctorOf(this)
     Entity.findLoadFactory(ctor)
     Entity.findTable(ctor)
     const cache = Entity.findCache(ctor)
     // add this item to the cache
-    cache.push(this)
+    cache.set(id, this)
   }
 
   /**
@@ -70,7 +74,7 @@ export abstract class Entity<T extends tableData> implements tableData {
         `TABLET_ENTITY.registerEntity: ${this.name} loadFactory can't be undefined`
       )
     Entity.tables.set(this, table)
-    Entity.caches.set(this, [])
+    Entity.caches.set(this, new Map<string, U>())
     Entity.loadFactories.set(this, loadFactory)
     return true
   }
@@ -120,9 +124,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     const newEntities = await Promise.all(
       records.map(async (record) => {
         const cache = Entity.findCache<T, U>(this)
-        const foundEntity = cache.find(
-          (cachedEntity) => cachedEntity.id == record.id
-        )
+        const foundEntity = cache.get(record.id)
         if (foundEntity) return foundEntity
         else return Entity.build<T, U>(record, this)
       })
@@ -176,11 +178,22 @@ export abstract class Entity<T extends tableData> implements tableData {
    */
   async save(): Promise<string | null> {
     const ctor = Entity.ctorOf(this)
+    // ensure the cache is up to date
+    Entity.findCache(ctor).set(this.id, this)
     const table = Entity.findTable(ctor)
     const record = this.generateRecord()
     const writtenRecord = await table.crupdate(record)
     if (writtenRecord) return writtenRecord.id
     else return null
+  }
+
+  /**
+   * delete the given entity from the table
+   */
+  async delete(): Promise<boolean> {
+    const table = Entity.findTable(Entity.ctorOf(this))
+    const record = this.generateRecord()
+    return table.delete(record)
   }
 
   /**
@@ -190,10 +203,15 @@ export abstract class Entity<T extends tableData> implements tableData {
   public static entityCacheList(): Array<{
     ctor: entityConstructor<any>
     cacheSize: number
+    cache: Map<string, any>
   }> {
-    const ctors: Array<{ ctor: entityConstructor<any>; cacheSize: number }> = []
+    const ctors: Array<{
+      ctor: entityConstructor<any>
+      cacheSize: number
+      cache: Map<string, any>
+    }> = []
     Entity.caches.forEach((cache, ctor) => {
-      ctors.push({ ctor: ctor, cacheSize: cache.length })
+      ctors.push({ ctor: ctor, cacheSize: cache.size, cache: cache })
     })
     return ctors
   }
@@ -205,7 +223,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   public static numCached<T extends tableData>(
     this: new (...args: any[]) => Entity<T>
   ): number {
-    return Entity.findCache(this).length
+    return Entity.findCache(this).size
   }
 
   /**
@@ -231,9 +249,9 @@ export abstract class Entity<T extends tableData> implements tableData {
    */
   private static findCache<T extends tableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
-  ): Array<U> {
+  ): Map<string, U> {
     const cache = Entity.caches.get(entityConstructor)
-    if (cache) return cache as U[]
+    if (cache) return cache as Map<string, U>
     else
       throw `no cache exists with constructor ${Object.getPrototypeOf(
         this
@@ -272,15 +290,12 @@ export abstract class Entity<T extends tableData> implements tableData {
     ctor: entityConstructor<T>
   ): Promise<U> {
     const cache = Entity.findCache<T, U>(ctor)
-    const foundEntity = cache.find(
-      (cachedEntity) => cachedEntity.id == record.id
-    )
+    const foundEntity = cache.get(record.id)
     if (foundEntity) return foundEntity
-    if (record['name'] !== undefined)
-      console.log(`building Entity ${name} ${record['name']}`)
     try {
       const factory = Entity.findLoadFactory<T, U>(ctor)
       const newEntity = await factory(record)
+      cache.set(newEntity.id, newEntity)
       return newEntity
     } catch (err) {
       const str =

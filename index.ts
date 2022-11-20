@@ -10,6 +10,7 @@ export {
   tableList,
   entityList,
   allEntities,
+  entityCache,
 } from './src/commands'
 
 export { Entity } from './src/Entity'

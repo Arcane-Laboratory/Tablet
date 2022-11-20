@@ -20,11 +20,25 @@ const allEntities = () => {
 }
 
 const entityList = () => {
-  const cacheList: Array<string> = []
-  Entity.entityCacheList().forEach((entity) => {
-    cacheList.push(`${entity.ctor.name} - ${entity.cacheSize} entries cached`)
-  })
-  return cacheList.join('\n')
+  return Entity.entityCacheList()
+    .map((entity) => `${entity.ctor.name} - ${entity.cacheSize} entries cached`)
+    .join('\n')
 }
 
-export { tableToString, tableList, entityList, allEntities }
+const entityCache = (entityName: string): string => {
+  const cache = Entity.entityCacheList().find(
+    (entity) => entity.ctor.name == entityName
+  )
+  if (cache === undefined)
+    return `no entity cache found with name ${entityName}`
+  return (
+    `${cache.ctor.name}: [${cache.cacheSize} entries]\n   ` +
+    Array.from(cache.cache)
+      .map((entry) => {
+        return entry.toString()
+      })
+      .join('\n   ')
+  )
+}
+
+export { tableToString, tableList, entityList, allEntities, entityCache }
