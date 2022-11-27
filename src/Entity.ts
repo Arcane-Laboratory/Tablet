@@ -17,16 +17,13 @@ interface loadFactory<T extends tableData, U extends Entity<T>> {
  */
 export abstract class Entity<T extends tableData> implements tableData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static tables = new Map<entityConstructor<any>, Table<any>>()
+  private static tables = new Map<string, Table<any>>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-  private static caches = new Map<
-    entityConstructor<any>,
-    Map<string, Entity<any>>
-  >()
+  private static caches = new Map<string, Map<string, Entity<any>>>()
   private static loadFactories = new Map<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    entityConstructor<any>,
+    string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loadFactory<any, Entity<any>>
   >()
@@ -73,9 +70,9 @@ export abstract class Entity<T extends tableData> implements tableData {
       throw new Error(
         `TABLET_ENTITY.registerEntity: ${this.name} loadFactory can't be undefined`
       )
-    Entity.tables.set(this, table)
-    Entity.caches.set(this, new Map<string, U>())
-    Entity.loadFactories.set(this, loadFactory)
+    Entity.tables.set(this.name, table)
+    Entity.caches.set(this.name, new Map<string, U>())
+    Entity.loadFactories.set(this.name, loadFactory)
     return true
   }
 
@@ -209,17 +206,17 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @returns a list of all instantiated entities
    */
   public static entityCacheList(): Array<{
-    ctor: entityConstructor<any>
+    ctorName: string
     cacheSize: number
     cache: Map<string, any>
   }> {
     const ctors: Array<{
-      ctor: entityConstructor<any>
+      ctorName: string
       cacheSize: number
       cache: Map<string, any>
     }> = []
     Entity.caches.forEach((cache, ctor) => {
-      ctors.push({ ctor: ctor, cacheSize: cache.size, cache: cache })
+      ctors.push({ ctorName: ctor, cacheSize: cache.size, cache: cache })
     })
     return ctors
   }
@@ -242,7 +239,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static findTable<T extends tableData>(
     entityConstructor: entityConstructor<T>
   ): Table<T> | null {
-    const table = Entity.tables.get(entityConstructor)
+    const table = Entity.tables.get(entityConstructor.name)
     if (table) return table
     else {
       console.log(
@@ -260,7 +257,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static findCache<T extends tableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): Map<string, U> {
-    const cache = Entity.caches.get(entityConstructor)
+    const cache = Entity.caches.get(entityConstructor.name)
     if (cache) return cache as Map<string, U>
     else
       throw `no cache exists with constructor ${Object.getPrototypeOf(
@@ -276,7 +273,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static findLoadFactory<T extends tableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): loadFactory<T, U> {
-    const loadFactory = Entity.loadFactories.get(entityConstructor)
+    const loadFactory = Entity.loadFactories.get(entityConstructor.name)
     if (loadFactory) return loadFactory as loadFactory<T, U>
     else
       throw `no factory exists with constructor ${Object.getPrototypeOf(

@@ -21,18 +21,18 @@ const allEntities = () => {
 
 const entityList = () => {
   return Entity.entityCacheList()
-    .map((entity) => `${entity.ctor.name} - ${entity.cacheSize} entries cached`)
+    .map((entity) => `${entity.ctorName} - ${entity.cacheSize} entries cached`)
     .join('\n')
 }
 
 const entityCache = (entityName: string): string => {
   const cache = Entity.entityCacheList().find(
-    (entity) => entity.ctor.name == entityName
+    (entity) => entity.ctorName == entityName
   )
   if (cache === undefined)
     return `no entity cache found with name ${entityName}`
   return (
-    `${cache.ctor.name}: [${cache.cacheSize} entries]\n   ` +
+    `${cache.ctorName}: [${cache.cacheSize} entries]\n   ` +
     Array.from(cache.cache)
       .map((entry) => {
         return entry.toString()
