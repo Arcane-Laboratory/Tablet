@@ -89,6 +89,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     id: string
   ): Promise<U | null> {
     const table = Entity.findTable<T>(this)
+    if (table === null) return null
     const record = await table.fetch(id)
     if (record == null) return null
     return await Entity.build<T, U>(record, this)
@@ -102,6 +103,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     this: new (...args: any[]) => U
   ): Promise<Array<U> | null> {
     const table = Entity.findTable<T>(this)
+    if (table === null) return null
     const allRecords = await table.fetchAll()
     if (allRecords == false) return null
 
@@ -120,6 +122,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     filterFn: (entity: T) => boolean
   ): Promise<Array<U>> {
     const table = Entity.findTable<T>(this)
+    if (table === null) return []
     const records = await table.filter(filterFn)
     const newEntities = await Promise.all(
       records.map(async (record) => {
@@ -143,17 +146,19 @@ export abstract class Entity<T extends tableData> implements tableData {
     findFn: (entity: T) => boolean
   ): Promise<U | undefined> {
     const table = Entity.findTable<T>(this)
+    if (table === null) return undefined
     const record = await table.find(findFn)
     if (!record) return undefined
     const newEntity = await Entity.build<T, U>(record, this)
     return newEntity
   }
 
-  static findRecord<T extends tableData>(
+  static async findRecord<T extends tableData>(
     this: new (...args: any[]) => Entity<T>,
     findFn: (entity: T) => boolean
   ): Promise<T | undefined> {
     const table = Entity.findTable<T>(this)
+    if (table === null) return undefined
     return table.find(findFn)
   }
 
@@ -167,6 +172,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     record: T
   ): Promise<T | null> {
     const table = Entity.findTable(this)
+    if (table === null) return null
     const savedRecord = await table.crupdate(record)
     if (savedRecord) return savedRecord
     else return null
@@ -182,6 +188,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     Entity.findCache(ctor).set(this.id, this)
     const table = Entity.findTable(ctor)
     const record = this.generateRecord()
+    if (table === null) return null
     const writtenRecord = await table.crupdate(record)
     if (writtenRecord) return writtenRecord.id
     else return null
@@ -192,6 +199,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    */
   async delete(): Promise<boolean> {
     const table = Entity.findTable(Entity.ctorOf(this))
+    if (table === null) return false
     const record = this.generateRecord()
     return table.delete(record)
   }
@@ -233,13 +241,15 @@ export abstract class Entity<T extends tableData> implements tableData {
    */
   private static findTable<T extends tableData>(
     entityConstructor: entityConstructor<T>
-  ): Table<T> {
+  ): Table<T> | null {
     const table = Entity.tables.get(entityConstructor)
     if (table) return table
-    else
-      throw new Error(
+    else {
+      console.log(
         `TabletError: Entity.findTable\nno table exists with constructor ${entityConstructor.name}`
       )
+      return null
+    }
   }
 
   /**
