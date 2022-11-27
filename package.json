@@ -2,7 +2,10 @@
   "name": "@wizardtower/tablet",
   "version": "0.1.0",
   "description": "DB abstraction layer for JSON, Sheets, MongoDB, etc.",
-  "main": "index.ts",
+  "main": "./built/index.js",
+  "exports": {
+    "require": "./built/index.js"
+  },
   "scripts": {
     "test": "npm run test",
     "clean": "rmdir /Q /S built",
