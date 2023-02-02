@@ -1,5 +1,4 @@
 node_modules
-built
 package-lock.json
 # Optional eslint cache
 .eslintcache
