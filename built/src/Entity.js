@@ -53,7 +53,13 @@ class Entity {
         const record = await table.fetch(id);
         if (record == null)
             return null;
-        return await Entity.build(record, this);
+        try {
+            return await Entity.build(record, this);
+        }
+        catch (err) {
+            console.log(err);
+            return null;
+        }
     }
     /**
      *

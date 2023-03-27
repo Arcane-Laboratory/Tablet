@@ -89,7 +89,12 @@ export abstract class Entity<T extends tableData> implements tableData {
     if (table === null) return null
     const record = await table.fetch(id)
     if (record == null) return null
-    return await Entity.build<T, U>(record, this)
+    try {
+      return await Entity.build<T, U>(record, this)
+    } catch (err) {
+      console.log(err)
+      return null
+    }
   }
 
   /**
