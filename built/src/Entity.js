@@ -39,6 +39,7 @@ class Entity {
         Entity.tables.set(this.name, table);
         Entity.caches.set(this.name, new Map());
         Entity.loadFactories.set(this.name, loadFactory);
+        Entity.loadPromises.set(this.name, new Map());
         return true;
     }
     /**
@@ -177,7 +178,7 @@ class Entity {
         return Entity.findCache(this).size;
     }
     /**
-     * find a table belonging to a child class given a child class
+     * find a table belonging to a child class given the child class
      * @param entityConstructor the child class
      * @returns the table which stores that child class's information
      */
@@ -202,6 +203,13 @@ class Entity {
         else
             throw `no cache exists with constructor ${Object.getPrototypeOf(this).constructor.toString()}`;
     }
+    static findLoadPromises(entityConstructor) {
+        const loadPromises = Entity.loadPromises.get(entityConstructor.name);
+        if (loadPromises)
+            return loadPromises;
+        else
+            throw `no loadPromises exist with constructor ${Object.getPrototypeOf(this).constructor.toString()}`;
+    }
     /**
      * find the loadFactory of a child class
      * @param entityConstructor the child class
@@ -215,13 +223,21 @@ class Entity {
             throw `no factory exists with constructor ${Object.getPrototypeOf(this).constructor.toString()}`;
     }
     static async build(record, ctor) {
+        // if entity is already cached, return it
         const cache = Entity.findCache(ctor);
         const foundEntity = cache.get(record.id);
         if (foundEntity)
             return foundEntity;
+        // if entity is being loaded, return the promise
+        const loadPromises = Entity.findLoadPromises(ctor);
+        const loadPromise = loadPromises.get(record.id);
+        if (loadPromise)
+            return loadPromise;
         try {
             const factory = Entity.findLoadFactory(ctor);
-            const newEntity = await factory(record);
+            const entityPromise = factory(record);
+            loadPromises.set(record.id, entityPromise);
+            const newEntity = await entityPromise;
             cache.set(newEntity.id, newEntity);
             return newEntity;
         }
@@ -242,6 +258,8 @@ Entity.tables = new Map();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 Entity.caches = new Map();
 Entity.loadFactories = new Map();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+Entity.loadPromises = new Map();
 /**
  * extracts a constructor from an entity
  * @param entity the object to get the constructor of

@@ -19,14 +19,16 @@ export abstract class Entity<T extends tableData> implements tableData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static tables = new Map<string, Table<any>>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
   private static caches = new Map<string, Map<string, Entity<any>>>()
+
   private static loadFactories = new Map<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loadFactory<any, Entity<any>>
   >()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static loadPromises = new Map<string, Map<string, Promise<any>>>()
 
   public readonly id: string
 
@@ -73,6 +75,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     Entity.tables.set(this.name, table)
     Entity.caches.set(this.name, new Map<string, U>())
     Entity.loadFactories.set(this.name, loadFactory)
+    Entity.loadPromises.set(this.name, new Map<string, Promise<U>>())
     return true
   }
 
@@ -237,7 +240,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   }
 
   /**
-   * find a table belonging to a child class given a child class
+   * find a table belonging to a child class given the child class
    * @param entityConstructor the child class
    * @returns the table which stores that child class's information
    */
@@ -266,6 +269,17 @@ export abstract class Entity<T extends tableData> implements tableData {
     if (cache) return cache as Map<string, U>
     else
       throw `no cache exists with constructor ${Object.getPrototypeOf(
+        this
+      ).constructor.toString()}`
+  }
+
+  private static findLoadPromises<T extends tableData, U extends Entity<T>>(
+    entityConstructor: entityConstructor<T>
+  ): Map<string, Promise<U>> {
+    const loadPromises = Entity.loadPromises.get(entityConstructor.name)
+    if (loadPromises) return loadPromises as Map<string, Promise<U>>
+    else
+      throw `no loadPromises exist with constructor ${Object.getPrototypeOf(
         this
       ).constructor.toString()}`
   }
@@ -301,12 +315,21 @@ export abstract class Entity<T extends tableData> implements tableData {
     record: T,
     ctor: entityConstructor<T>
   ): Promise<U> {
+    // if entity is already cached, return it
     const cache = Entity.findCache<T, U>(ctor)
     const foundEntity = cache.get(record.id)
     if (foundEntity) return foundEntity
+    // if entity is being loaded, return the promise
+    const loadPromises: Map<string, Promise<U>> = Entity.findLoadPromises<T, U>(
+      ctor
+    )
+    const loadPromise = loadPromises.get(record.id)
+    if (loadPromise) return loadPromise
     try {
       const factory = Entity.findLoadFactory<T, U>(ctor)
-      const newEntity = await factory(record)
+      const entityPromise = factory(record)
+      loadPromises.set(record.id, entityPromise)
+      const newEntity = await entityPromise
       cache.set(newEntity.id, newEntity)
       return newEntity
     } catch (err) {

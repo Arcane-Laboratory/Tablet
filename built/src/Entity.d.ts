@@ -13,6 +13,7 @@ export declare abstract class Entity<T extends tableData> implements tableData {
     private static tables;
     private static caches;
     private static loadFactories;
+    private static loadPromises;
     readonly id: string;
     /**
      *
@@ -84,7 +85,7 @@ export declare abstract class Entity<T extends tableData> implements tableData {
      */
     static numCached<T extends tableData>(this: new (...args: any[]) => Entity<T>): number;
     /**
-     * find a table belonging to a child class given a child class
+     * find a table belonging to a child class given the child class
      * @param entityConstructor the child class
      * @returns the table which stores that child class's information
      */
@@ -95,6 +96,7 @@ export declare abstract class Entity<T extends tableData> implements tableData {
      * @returns the cache which stores instance of the child class
      */
     private static findCache;
+    private static findLoadPromises;
     /**
      * find the loadFactory of a child class
      * @param entityConstructor the child class
