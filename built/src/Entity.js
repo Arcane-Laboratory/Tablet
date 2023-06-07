@@ -73,7 +73,19 @@ class Entity {
         const allRecords = await table.fetchAll();
         if (allRecords == false)
             return null;
-        return await Promise.all(allRecords.map(async (record) => Entity.build(record, this)));
+        const entities = [];
+        for (let i = 0; i < allRecords.length; i++) {
+            const record = allRecords[i];
+            try {
+                const entity = await Entity.build(record, this);
+                entities.push(entity);
+            }
+            catch (err) {
+                console.log(`${this.name} failed to load entity ${record.id}`);
+                console.log(err);
+            }
+        }
+        return entities;
     }
     /**
      *
