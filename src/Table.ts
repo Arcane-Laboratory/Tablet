@@ -37,9 +37,8 @@ abstract class Table<T extends tableData> {
   public async clone(targetTable: Table<T>, verbose?: boolean) {
     await this.loadPromise
     await targetTable.loadPromise
-    const crupdates = this.toArray().map((entry) => {
-      targetTable.crupdate(entry)
-    })
+    const crupdates: Promise<false | T>[] = []
+    this.toArray().map((entry) => targetTable.crupdate(entry))
     if (verbose)
       console.log(
         ` Tablet: Cloning ${this.numEntries()} entries from ${this.name} into ${
@@ -76,7 +75,7 @@ abstract class Table<T extends tableData> {
    * @returns a string, the summary of what Table has done so far
    */
   public static getSummary(verbose?: false): string {
-    const info = [`Table Summary:`]
+    const info = ['Table Summary:']
     info.push(`${Table.all.size} tables`)
     Table.all.forEach((table) => {
       const tableSummary = table.generateSummary()

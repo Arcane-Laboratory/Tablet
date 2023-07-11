@@ -38,9 +38,14 @@ export class SheetTable<T extends tableData> extends Table<T> {
         this.headers.push(key)
     })
     this.loadPromise = this.load()
-    this.loadPromise.then(() => {
-      this.summary['SPREADSHEET'] = this.spreadsheet.title
-    })
+    this.loadPromise
+      .then(() => {
+        this.summary['SPREADSHEET'] = this.spreadsheet.title
+      })
+      .catch((err) => {
+        console.log(`error loading ${this.name}`)
+        console.log(err)
+      })
   }
   public async crupdate(entry: T, changes = false): Promise<T | false> {
     if (!entry.id) entry.id == randomUUID()
@@ -124,17 +129,14 @@ export class SheetTable<T extends tableData> extends Table<T> {
     }
   }
 
-  public async fetch(
-    id: string,
-    forceRefresh?: boolean | undefined
-  ): Promise<T | null> {
+  public async fetch(id: string): Promise<T | null> {
     await this.loadPromise
     const index = this.findRowIndexById(id)
     if (index == -1) return null
     return this.parseRow(this.rows[index])
   }
 
-  public async fetchAll(forceRefresh?: boolean | undefined): Promise<Array<T>> {
+  public async fetchAll(): Promise<Array<T>> {
     await this.loadPromise
     return this.toArray()
   }

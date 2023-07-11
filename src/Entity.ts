@@ -199,6 +199,12 @@ export abstract class Entity<T extends tableData> implements tableData {
     else return null
   }
 
+  saveSync(): void {
+    this.save().catch((err) => {
+      console.log(err)
+    })
+  }
+
   /**
    * delete the given entity from the table
    */

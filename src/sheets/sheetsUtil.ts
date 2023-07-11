@@ -1,9 +1,5 @@
-import { tableData } from '../Table'
 import { RateLimiter } from 'limiter'
-import {
-  GoogleSpreadsheet as Spreadsheet,
-  GoogleSpreadsheetRow as Row,
-} from 'google-spreadsheet'
+import { GoogleSpreadsheet as Spreadsheet } from 'google-spreadsheet'
 
 interface gKey {
   private_key: string

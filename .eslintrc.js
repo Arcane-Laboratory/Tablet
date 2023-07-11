@@ -44,6 +44,11 @@ module.exports = {
         // and
         //https://github.com/cartant/eslint-plugin-etc/blob/main/docs/rules/no-enum.md
         'etc/prefer-interface': 1,
+        '@typescript-eslint/no-floating-promises': 'error',
+        '@typescript-eslint/no-misused-promises': [
+          'error',
+          { checksVoidReturn: false },
+        ],
       },
     },
   ],

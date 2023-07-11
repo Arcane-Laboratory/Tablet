@@ -99,7 +99,7 @@ class JsonTable<T extends tableData> extends Table<T> {
    * @param forceRefresh if the table should be reinstantiated, does nothing for json
    * @returns fthe matching entry, or null if no id matched
    */
-  public async fetch(id: string, forceRefresh?: boolean): Promise<T | null> {
+  public async fetch(id: string): Promise<T | null> {
     const cachedVal = this.cache.get(id)
     if (cachedVal !== undefined) return cachedVal
     return null
@@ -188,7 +188,9 @@ class JsonTable<T extends tableData> extends Table<T> {
       if (!Array.isArray(fileOut.data))
         throw `${this.filePath} data is formatted incorrectly, needs to be an array`
       fileOut.data.forEach((entry) => {
-        this.crupdate(entry)
+        this.crupdate(entry).catch((err) => {
+          console.log(err)
+        })
       })
       this.summary.READS.value = fileOut.data.length
 
