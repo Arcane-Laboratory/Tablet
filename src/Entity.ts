@@ -111,10 +111,18 @@ export abstract class Entity<T extends tableData> implements tableData {
     if (table === null) return null
     const allRecords = await table.fetchAll()
     if (allRecords == false) return null
-
-    return await Promise.all(
-      allRecords.map(async (record) => Entity.build<T, U>(record, this))
-    )
+    const entities: U[] = []
+    for (let i = 0; i < allRecords.length; i++) {
+      const record = allRecords[i]
+      try {
+        const entity = await Entity.build<T, U>(record, this)
+        entities.push(entity)
+      } catch (err) {
+        console.log(`${this.name} failed to load entity ${record.id}`)
+        console.log(err)
+      }
+    }
+    return entities
   }
 
   /**
