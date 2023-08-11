@@ -43,7 +43,7 @@ class Table {
      * @returns true if the entry is valid
      */
     validate(entry) {
-        return entry.id !== undefined;
+        return entry._id !== undefined;
     }
     generateSummary() {
         return this.summary;

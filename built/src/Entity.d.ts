@@ -14,7 +14,7 @@ export declare abstract class Entity<T extends tableData> implements tableData {
     private static caches;
     private static loadFactories;
     private static loadPromises;
-    readonly id: string;
+    readonly _id: string;
     /**
      *
      * @param id the id of a given entity, if none exists, one is assigned

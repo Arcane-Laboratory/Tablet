@@ -48,7 +48,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
       })
   }
   public async crupdate(entry: T, changes = false): Promise<T | false> {
-    if (!entry.id) entry.id == randomUUID()
+    if (!entry._id) entry._id == randomUUID()
     const updateExisting = await this.update(entry, changes)
     if (updateExisting) return entry
     else {
@@ -88,7 +88,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private async update(entry: T, changes = false): Promise<true | null> {
     await this.loadPromise
-    const index = this.findRowIndexById(entry.id)
+    const index = this.findRowIndexById(entry._id)
 
     if (index === -1) return null
 
@@ -112,7 +112,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   public async delete(entry: T): Promise<boolean> {
     await this.loadPromise
-    const id = entry.id
+    const id = entry._id
     const index = this.findRowIndexById(id)
     if (!(index == -1)) return false
     const foundEntry = this.rows[index]
@@ -166,7 +166,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private hasChanges(entry: T, index = -1): boolean {
     let changes = false
-    if (index === -1) index = this.findRowIndexById(entry.id)
+    if (index === -1) index = this.findRowIndexById(entry._id)
     if (index === -1) return false
 
     this.headers.forEach((header) => {

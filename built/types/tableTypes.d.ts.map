@@ -1,1 +1,1 @@
-{"version":3,"file":"tableTypes.d.ts","sourceRoot":"","sources":["../../types/tableTypes.ts"],"names":[],"mappings":"AAAA,UAAU,SAAS;IACjB,EAAE,EAAE,MAAM,CAAA;IACV,SAAS,CAAC,EAAE,MAAM,CAAA;IAClB,UAAU,CAAC,EAAE,MAAM,CAAA;CACpB;AAED,OAAO,EAAE,SAAS,EAAE,CAAA"}
+{"version":3,"file":"tableTypes.d.ts","sourceRoot":"","sources":["../../types/tableTypes.ts"],"names":[],"mappings":"AAAA,UAAU,SAAS;IACjB,GAAG,EAAE,MAAM,CAAA;IACX,SAAS,CAAC,EAAE,MAAM,CAAA;IAClB,UAAU,CAAC,EAAE,MAAM,CAAA;CACpB;AAED,OAAO,EAAE,SAAS,EAAE,CAAA"}

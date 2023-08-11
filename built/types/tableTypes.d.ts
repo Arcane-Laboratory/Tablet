@@ -1,5 +1,5 @@
 interface tableData {
-    id: string;
+    _id: string;
     createdAt?: string;
     lastUpdate?: string;
 }

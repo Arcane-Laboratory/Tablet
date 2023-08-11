@@ -61,7 +61,7 @@ class JsonTable<T extends tableData> extends Table<T> {
       arr.push(value)
     })
     arr.sort((a, b) => {
-      return a.id.toString().localeCompare(b.id.toString())
+      return a._id.toString().localeCompare(b._id.toString())
     })
     return arr
   }
@@ -120,7 +120,7 @@ class JsonTable<T extends tableData> extends Table<T> {
    */
   public async crupdate(entry: T) {
     if (!this.validate(entry)) throw `${entry} is not valid`
-    this.cache.set(entry.id, entry)
+    this.cache.set(entry._id, entry)
     this.bufferWrite = true
     this.summary.UPDATES.value++
     return entry
@@ -152,7 +152,7 @@ class JsonTable<T extends tableData> extends Table<T> {
    */
   public async delete(entry: T) {
     this.bufferWrite = true
-    return this.cache.delete(entry.id)
+    return this.cache.delete(entry._id)
   }
 
   private ioBuffer() {

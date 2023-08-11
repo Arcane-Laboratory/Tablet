@@ -54,7 +54,7 @@ abstract class Table<T extends tableData> {
    * @returns true if the entry is valid
    */
   protected validate(entry: T): boolean {
-    return entry.id !== undefined
+    return entry._id !== undefined
   }
 
   protected summary: tableSummary = {

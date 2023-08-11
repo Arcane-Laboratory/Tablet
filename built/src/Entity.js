@@ -16,7 +16,7 @@ class Entity {
      */
     constructor(id) {
         id ?? (id = (0, crypto_1.randomUUID)());
-        this.id = id;
+        this._id = id;
         // Ensure that Entity Subclass has been registered
         const ctor = Entity.ctorOf(this);
         Entity.findLoadFactory(ctor);
@@ -81,7 +81,7 @@ class Entity {
                 entities.push(entity);
             }
             catch (err) {
-                console.log(`${this.name} failed to load entity ${record.id}`);
+                console.log(`${this.name} failed to load entity ${record._id}`);
                 console.log(err);
             }
         }
@@ -99,7 +99,7 @@ class Entity {
         const records = await table.filter(filterFn);
         const newEntities = await Promise.all(records.map(async (record) => {
             const cache = Entity.findCache(this);
-            const foundEntity = cache.get(record.id);
+            const foundEntity = cache.get(record._id);
             if (foundEntity)
                 return foundEntity;
             else
@@ -150,14 +150,14 @@ class Entity {
     async save() {
         const ctor = Entity.ctorOf(this);
         // ensure the cache is up to date
-        Entity.findCache(ctor).set(this.id, this);
+        Entity.findCache(ctor).set(this._id, this);
         const table = Entity.findTable(ctor);
         const record = this.generateRecord();
         if (table === null)
             return null;
         const writtenRecord = await table.crupdate(record);
         if (writtenRecord)
-            return writtenRecord.id;
+            return writtenRecord._id;
         else
             return null;
     }
@@ -242,25 +242,25 @@ class Entity {
     static async build(record, ctor) {
         // if entity is already cached, return it
         const cache = Entity.findCache(ctor);
-        const foundEntity = cache.get(record.id);
+        const foundEntity = cache.get(record._id);
         if (foundEntity)
             return foundEntity;
         // if entity is being loaded, return the promise
         const loadPromises = Entity.findLoadPromises(ctor);
-        const loadPromise = loadPromises.get(record.id);
+        const loadPromise = loadPromises.get(record._id);
         if (loadPromise)
             return loadPromise;
         try {
             const factory = Entity.findLoadFactory(ctor);
             const entityPromise = factory(record);
-            loadPromises.set(record.id, entityPromise);
+            loadPromises.set(record._id, entityPromise);
             const newEntity = await entityPromise;
-            cache.set(newEntity.id, newEntity);
+            cache.set(newEntity._id, newEntity);
             return newEntity;
         }
         catch (err) {
             const str = `TABLET_ERROR: ${ctor.name}.build\n` +
-                `failure loading recordId: ${record.id}`;
+                `failure loading recordId: ${record._id}`;
             // if (err instanceof Error) {
             //   err.stack += str
             //   throw err

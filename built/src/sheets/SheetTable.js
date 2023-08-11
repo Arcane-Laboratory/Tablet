@@ -99,8 +99,8 @@ class SheetTable extends Table_1.Table {
         });
     }
     async crupdate(entry, changes = false) {
-        if (!entry.id)
-            entry.id == (0, crypto_1.randomUUID)();
+        if (!entry._id)
+            entry._id == (0, crypto_1.randomUUID)();
         const updateExisting = await this.update(entry, changes);
         if (updateExisting)
             return entry;
@@ -138,7 +138,7 @@ class SheetTable extends Table_1.Table {
     }
     async update(entry, changes = false) {
         await this.loadPromise;
-        const index = this.findRowIndexById(entry.id);
+        const index = this.findRowIndexById(entry._id);
         if (index === -1)
             return null;
         if (this.hasChanges(entry))
@@ -162,7 +162,7 @@ class SheetTable extends Table_1.Table {
     }
     async delete(entry) {
         await this.loadPromise;
-        const id = entry.id;
+        const id = entry._id;
         const index = this.findRowIndexById(id);
         if (!(index == -1))
             return false;
@@ -216,7 +216,7 @@ class SheetTable extends Table_1.Table {
     hasChanges(entry, index = -1) {
         let changes = false;
         if (index === -1)
-            index = this.findRowIndexById(entry.id);
+            index = this.findRowIndexById(entry._id);
         if (index === -1)
             return false;
         this.headers.forEach((header) => {
