@@ -278,7 +278,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private findRowIndexById = (id: string): number => {
     const index = this.rows.findIndex(
-      (row) => parseVal(row.id).toString() == id.toString()
+      (row) => parseVal(row.id)?.toString() === id.toString()
     )
     return index
   }

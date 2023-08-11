@@ -80,7 +80,7 @@ class SheetTable extends Table_1.Table {
             }
         };
         this.findRowIndexById = (id) => {
-            const index = this.rows.findIndex((row) => (0, sheetsUtil_1.parseVal)(row.id).toString() == id.toString());
+            const index = this.rows.findIndex((row) => (0, sheetsUtil_1.parseVal)(row.id)?.toString() === id.toString());
             return index;
         };
         this.spreadsheetId = spreadsheetInfo.spreadsheetId;
