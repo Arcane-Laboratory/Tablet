@@ -22,7 +22,7 @@ export declare class SheetTable<T extends tableData> extends Table<T> {
     private add;
     private update;
     delete(entry: T): Promise<boolean>;
-    fetch(id: string): Promise<T | null>;
+    fetch(_id: string): Promise<T | null>;
     fetchAll(): Promise<Array<T>>;
     filter(filter: (entry: T) => boolean): Promise<T[]>;
     find(finder: (entry: T) => boolean): Promise<T | undefined>;
