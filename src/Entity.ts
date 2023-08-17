@@ -34,18 +34,18 @@ export abstract class Entity<T extends tableData> implements tableData {
 
   /**
    *
-   * @param id the id of a given entity, if none exists, one is assigned
+   * @param _id the id of a given entity, if none exists, one is assigned
    */
-  constructor(id?: string) {
-    id ??= randomUUID()
-    this._id = id
+  constructor(_id?: string) {
+    _id ??= randomUUID()
+    this._id = _id
     // Ensure that Entity Subclass has been registered
     const ctor = Entity.ctorOf(this)
     Entity.findLoadFactory(ctor)
     Entity.findTable(ctor)
     const cache = Entity.findCache(ctor)
     // add this item to the cache
-    cache.set(id, this)
+    cache.set(_id, this)
   }
 
   /**
