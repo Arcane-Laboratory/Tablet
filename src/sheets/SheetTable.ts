@@ -19,7 +19,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
   private sheet!: Sheet
   public loadPromise: Promise<boolean>
   private rows!: Array<Row>
-  private headers = ['id', 'createdAt', 'lastUpdate']
+  private headers = ['_id', 'createdAt', 'lastUpdate']
   /**
    *
    * @param name the name of the table, used to identify a the proper tab on the spreadsheet
@@ -129,9 +129,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
     }
   }
 
-  public async fetch(id: string): Promise<T | null> {
+  public async fetch(_id: string): Promise<T | null> {
     await this.loadPromise
-    const index = this.findRowIndexById(id)
+    const index = this.findRowIndexById(_id)
     if (index == -1) return null
     return this.parseRow(this.rows[index])
   }
@@ -276,9 +276,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
     return parsedObject as T
   }
 
-  private findRowIndexById = (id: string): number => {
+  private findRowIndexById = (_id: string): number => {
     const index = this.rows.findIndex(
-      (row) => parseVal(row.id)?.toString() === id.toString()
+      (row) => parseVal(row._id)?.toString() === _id.toString()
     )
     return index
   }

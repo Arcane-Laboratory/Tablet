@@ -17,9 +17,9 @@ export declare abstract class Entity<T extends tableData> implements tableData {
     readonly _id: string;
     /**
      *
-     * @param id the id of a given entity, if none exists, one is assigned
+     * @param _id the id of a given entity, if none exists, one is assigned
      */
-    constructor(id?: string);
+    constructor(_id?: string);
     /**
      * generate a record to be stored in a Table
      */

@@ -17,7 +17,7 @@ class SheetTable extends Table_1.Table {
         super(name);
         this.name = name;
         this.spreadsheetInfo = spreadsheetInfo;
-        this.headers = ['id', 'createdAt', 'lastUpdate'];
+        this.headers = ['_id', 'createdAt', 'lastUpdate'];
         /*
          * Load the class sheet
          * Create a new sheet if not found
@@ -79,8 +79,8 @@ class SheetTable extends Table_1.Table {
                 return false;
             }
         };
-        this.findRowIndexById = (id) => {
-            const index = this.rows.findIndex((row) => (0, sheetsUtil_1.parseVal)(row.id)?.toString() === id.toString());
+        this.findRowIndexById = (_id) => {
+            const index = this.rows.findIndex((row) => (0, sheetsUtil_1.parseVal)(row._id)?.toString() === _id.toString());
             return index;
         };
         this.spreadsheetId = spreadsheetInfo.spreadsheetId;
@@ -179,9 +179,9 @@ class SheetTable extends Table_1.Table {
             return false;
         }
     }
-    async fetch(id) {
+    async fetch(_id) {
         await this.loadPromise;
-        const index = this.findRowIndexById(id);
+        const index = this.findRowIndexById(_id);
         if (index == -1)
             return null;
         return this.parseRow(this.rows[index]);

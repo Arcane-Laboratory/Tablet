@@ -12,18 +12,18 @@ const crypto_1 = require("crypto");
 class Entity {
     /**
      *
-     * @param id the id of a given entity, if none exists, one is assigned
+     * @param _id the id of a given entity, if none exists, one is assigned
      */
-    constructor(id) {
-        id ?? (id = (0, crypto_1.randomUUID)());
-        this._id = id;
+    constructor(_id) {
+        _id ?? (_id = (0, crypto_1.randomUUID)());
+        this._id = _id;
         // Ensure that Entity Subclass has been registered
         const ctor = Entity.ctorOf(this);
         Entity.findLoadFactory(ctor);
         Entity.findTable(ctor);
         const cache = Entity.findCache(ctor);
         // add this item to the cache
-        cache.set(id, this);
+        cache.set(_id, this);
     }
     /**
      *
