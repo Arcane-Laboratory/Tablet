@@ -1,7 +1,7 @@
 interface tableData {
-    _id: string;
-    createdAt?: string;
-    lastUpdate?: string;
+  _id: string
+  createdAt?: string
+  lastUpdate?: string
 }
-export { tableData };
+export { tableData }
 //# sourceMappingURL=tableTypes.d.ts.map

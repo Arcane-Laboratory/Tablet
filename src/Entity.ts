@@ -112,16 +112,13 @@ export abstract class Entity<T extends tableData> implements tableData {
     const allRecords = await table.fetchAll()
     if (allRecords == false) return null
     const entities: U[] = []
-    for (let i = 0; i < allRecords.length; i++) {
-      const record = allRecords[i]
-      try {
-        const entity = await Entity.build<T, U>(record, this)
-        entities.push(entity)
-      } catch (err) {
-        console.log(`${this.name} failed to load entity ${record._id}`)
+    const entityPromises = allRecords.map(async (record) => {
+      const entity = await Entity.build<T, U>(record, this).catch((err) =>
         console.log(err)
-      }
-    }
+      )
+      if (entity) entities.push(entity)
+    })
+    await Promise.all(entityPromises)
     return entities
   }
 
@@ -339,22 +336,15 @@ export abstract class Entity<T extends tableData> implements tableData {
     )
     const loadPromise = loadPromises.get(record._id)
     if (loadPromise) return loadPromise
-    try {
-      const factory = Entity.findLoadFactory<T, U>(ctor)
-      const entityPromise = factory(record)
-      loadPromises.set(record._id, entityPromise)
-      const newEntity = await entityPromise
-      cache.set(newEntity._id, newEntity)
-      return newEntity
-    } catch (err) {
-      const str =
-        `TABLET_ERROR: ${ctor.name}.build\n` +
-        `failure loading recordId: ${record._id}`
-      // if (err instanceof Error) {
-      //   err.stack += str
-      //   throw err
-      // } else
-      throw new Error(str + '\n' + err)
-    }
+    const factory = Entity.findLoadFactory<T, U>(ctor)
+    const entityPromise = factory(record).catch((err) => {
+      const str = `TABLET BUILD FAILURE: ${ctor.name}[_id: ${record._id}]`
+
+      throw new Error(str + '\n ' + err)
+    })
+    loadPromises.set(record._id, entityPromise)
+    const newEntity = await entityPromise
+    cache.set(newEntity._id, newEntity)
+    return newEntity
   }
 }

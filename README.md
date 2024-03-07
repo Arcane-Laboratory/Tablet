@@ -1,10 +1,12 @@
-# Tablet 
+# Tablet
 
-A small npm package which provides simple and extensible database abstraction. 
+A small npm package which provides simple and extensible database abstraction.
 
-### Currently supports 
-- local .json files 
-- google sheets 
+### Currently supports
 
-### Planned to support 
+- local .json files
+- google sheets
+
+### Planned to support
+
 - mongoDB

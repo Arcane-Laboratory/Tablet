@@ -151,8 +151,9 @@ class JsonTable<T extends tableData> extends Table<T> {
    * @returns true if the deletion was successful
    */
   public async delete(entry: T) {
+    const res = this.cache.delete(entry._id)
     this.bufferWrite = true
-    return this.cache.delete(entry._id)
+    return res
   }
 
   private ioBuffer() {
