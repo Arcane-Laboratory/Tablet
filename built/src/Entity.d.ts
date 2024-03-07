@@ -1,5 +1,5 @@
 import { Table, tableData } from './Table'
-interface loadFactory<T extends tableData, U extends Entity<T>> {
+export interface loadFactory<T extends tableData, U extends Entity<T>> {
   (record: T): Promise<U | null>
 }
 /**
@@ -139,5 +139,4 @@ export declare abstract class Entity<T extends tableData> implements tableData {
   private static ctorOf
   private static build
 }
-export {}
 //# sourceMappingURL=Entity.d.ts.map

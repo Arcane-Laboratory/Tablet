@@ -4,7 +4,7 @@ import { Table, tableData } from './Table'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type entityConstructor<T extends tableData> = new (...args: any[]) => Entity<T>
 
-interface loadFactory<T extends tableData, U extends Entity<T>> {
+export interface loadFactory<T extends tableData, U extends Entity<T>> {
   (record: T): Promise<U | null>
 }
 
@@ -118,15 +118,19 @@ export abstract class Entity<T extends tableData> implements tableData {
     const allRecords = await table.fetchAll()
     if (allRecords == false) return null
     const entities: U[] = []
-    const entityPromises = allRecords.map(async (record) => {
-      const entity = await Entity.build<T, U>(record, this).catch((err) =>
-        console.log(err)
-      )
-      if (entity) {
-        entities.push(entity)
-        successes++
-      } else failures++
-    })
+    const entityPromises = allRecords.map((record) =>
+      Entity.build<T, U>(record, this)
+        .then((entity) => {
+          if (entity) {
+            entities.push(entity)
+            successes++
+          } else failures++
+        })
+        .catch((err) => {
+          console.log(err)
+          failures++
+        })
+    )
     await Promise.all(entityPromises)
     return { successes, failures, entities }
   }
@@ -347,15 +351,16 @@ export abstract class Entity<T extends tableData> implements tableData {
     if (loadPromise) return loadPromise
     const factory = Entity.findLoadFactory<T, U>(ctor)
     const entityPromise = factory(record).catch((err) => {
-      const str = `TABLET BUILD FAILURE: ${ctor.name}[_id: ${record._id}]`
-
-      throw new Error(str + '\n ' + err)
+      const str = `TABLET BUILD ERROR: ${ctor.name}[_id: ${record._id}]`
+      console.log(str + '\n ' + err)
+      return null
     })
     loadPromises.set(record._id, entityPromise)
     const newEntity = await entityPromise
     if (newEntity) {
       cache.set(newEntity._id, newEntity)
+      return newEntity
     }
-    return newEntity
+    return null
   }
 }

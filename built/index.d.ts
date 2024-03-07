@@ -9,5 +9,5 @@ export {
   allEntities,
   entityCache,
 } from './src/commands'
-export { Entity } from './src/Entity'
+export { Entity, loadFactory } from './src/Entity'
 //# sourceMappingURL=index.d.ts.map

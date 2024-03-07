@@ -13,4 +13,4 @@ export {
   entityCache,
 } from './src/commands'
 
-export { Entity } from './src/Entity'
+export { Entity, loadFactory } from './src/Entity'
