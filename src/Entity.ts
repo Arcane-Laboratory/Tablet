@@ -5,7 +5,7 @@ import { Table, tableData } from './Table'
 type entityConstructor<T extends tableData> = new (...args: any[]) => Entity<T>
 
 interface loadFactory<T extends tableData, U extends Entity<T>> {
-  (record: T): Promise<U>
+  (record: T): Promise<U | null>
 }
 
 /**
@@ -106,7 +106,13 @@ export abstract class Entity<T extends tableData> implements tableData {
    */
   static async fetchAll<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U
-  ): Promise<Array<U> | null> {
+  ): Promise<{
+    successes: number
+    failures: number
+    entities: Array<U>
+  } | null> {
+    let successes = 0
+    let failures = 0
     const table = Entity.findTable<T>(this)
     if (table === null) return null
     const allRecords = await table.fetchAll()
@@ -116,10 +122,13 @@ export abstract class Entity<T extends tableData> implements tableData {
       const entity = await Entity.build<T, U>(record, this).catch((err) =>
         console.log(err)
       )
-      if (entity) entities.push(entity)
+      if (entity) {
+        entities.push(entity)
+        successes++
+      } else failures++
     })
     await Promise.all(entityPromises)
-    return entities
+    return { successes, failures, entities }
   }
 
   /**
@@ -142,8 +151,7 @@ export abstract class Entity<T extends tableData> implements tableData {
         else return Entity.build<T, U>(record, this)
       })
     )
-
-    return newEntities
+    return newEntities.filter((entity) => entity !== null) as U[] // remove nulls
   }
 
   /**
@@ -160,7 +168,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     const record = await table.find(findFn)
     if (!record) return undefined
     const newEntity = await Entity.build<T, U>(record, this)
-    return newEntity
+    if (newEntity) return newEntity
   }
 
   static async findRecord<T extends tableData>(
@@ -325,15 +333,16 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static async build<T extends tableData, U extends Entity<T>>(
     record: T,
     ctor: entityConstructor<T>
-  ): Promise<U> {
+  ): Promise<U | null> {
     // if entity is already cached, return it
     const cache = Entity.findCache<T, U>(ctor)
     const foundEntity = cache.get(record._id)
     if (foundEntity) return foundEntity
     // if entity is being loaded, return the promise
-    const loadPromises: Map<string, Promise<U>> = Entity.findLoadPromises<T, U>(
-      ctor
-    )
+    const loadPromises: Map<
+      string,
+      Promise<U | null>
+    > = Entity.findLoadPromises<T, U>(ctor)
     const loadPromise = loadPromises.get(record._id)
     if (loadPromise) return loadPromise
     const factory = Entity.findLoadFactory<T, U>(ctor)
@@ -344,7 +353,9 @@ export abstract class Entity<T extends tableData> implements tableData {
     })
     loadPromises.set(record._id, entityPromise)
     const newEntity = await entityPromise
-    cache.set(newEntity._id, newEntity)
+    if (newEntity) {
+      cache.set(newEntity._id, newEntity)
+    }
     return newEntity
   }
 }

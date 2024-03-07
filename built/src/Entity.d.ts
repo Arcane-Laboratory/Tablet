@@ -1,6 +1,6 @@
 import { Table, tableData } from './Table'
 interface loadFactory<T extends tableData, U extends Entity<T>> {
-  (record: T): Promise<U>
+  (record: T): Promise<U | null>
 }
 /**
  * abstract class Entity can be implemented to make classes integrated with a Table
@@ -50,7 +50,11 @@ export declare abstract class Entity<T extends tableData> implements tableData {
    */
   static fetchAll<T extends tableData, U extends Entity<T>>(
     this: new (...args: any[]) => U
-  ): Promise<Array<U> | null>
+  ): Promise<{
+    successes: number
+    failures: number
+    entities: Array<U>
+  } | null>
   /**
    *
    * @param filterFn a function used to filter entity records
