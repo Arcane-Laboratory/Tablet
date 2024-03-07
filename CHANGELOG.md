@@ -6,20 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0]
 
-## Changed
+### Changed
 
 - Factories are now encouraged to return null rather than throwing an error if something doesn't load properly
 - Entity.fetchAll returns a number of successes and failures in addition to the loaded entities
 
 ## [0.1.9]
 
-## Changed
+### Changed
 
 - Parallelized entity loading during fetchAll
 
 ## [0.1.8]
 
-## Removed
+### Removed
 
 - Removed uneeded files from the npm package
 
