@@ -5,6 +5,7 @@ export { SheetTable } from './src/sheets/SheetTable'
 export { MongoTable } from './src/mongodb/MongoTable'
 
 export { gKey, spreadsheetInfo } from './src/sheets/sheetsUtil'
+export { getMongoClient } from './src/mongodb/mongoUtil'
 
 export {
   tableToString,
