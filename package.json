@@ -46,6 +46,7 @@
     "eslint": "^8.26.0",
     "google-spreadsheet": "^3.3.0",
     "json-stable-stringify": "^1.0.2",
-    "limiter": "^2.1.0"
+    "limiter": "^2.1.0",
+    "mongodb": "^6.5.0"
   }
 }
