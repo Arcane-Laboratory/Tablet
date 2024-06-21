@@ -43,9 +43,7 @@ abstract class Table<T extends tableData> {
     if (verbose) {
       const entries = this.numEntries()
       console.log(
-        ` Tablet: Cloning ${entries} entries from ${this.name} into ${
-          targetTable.name
-        }`
+        ` Tablet: Cloning ${entries} entries from ${this.name} into ${targetTable.name}`
       )
     }
     return Promise.all(crupdates)

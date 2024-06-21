@@ -1,13 +1,13 @@
-import { Table, tableData } from "../Table"
+import { Table, tableData } from '../Table'
 import { Collection, Filter, MongoClient } from 'mongodb'
 
 class MongoTable<T extends tableData> extends Table<T> {
   public loadPromise: Promise<boolean>
   private collection!: Collection<T>
   constructor(
-    public readonly client: MongoClient, 
+    public readonly client: MongoClient,
     public readonly dbName: string,
-    public readonly name: string, // collection name
+    public readonly name: string // collection name
   ) {
     super(name)
     this.loadPromise = this.load()
@@ -59,12 +59,15 @@ class MongoTable<T extends tableData> extends Table<T> {
   }
   public async filter(filter: (entry: T) => boolean): Promise<Array<T>> {
     await this.loadPromise
-    return this.collection.find<T>(filter as Filter<T>).toArray()
+    // TODO: Use actual mogodb filter instead of getting whole collection and then filtering
+    const fullCollection = (await this.fetchAll()) || []
+    return fullCollection.filter(filter) || []
   }
   public async find(finder: (entry: T) => boolean): Promise<T | undefined> {
     await this.loadPromise
-    const found = await this.collection.findOne<T>(finder as Filter<T>)
-    return found || undefined
+    // TODO: Use actual mogodb filter instead of getting whole collection and then filtering
+    const fullCollection = (await this.fetchAll()) || []
+    return fullCollection.find(finder)
   }
 }
 

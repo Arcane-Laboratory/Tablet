@@ -6,8 +6,8 @@ const getMongoClient = async (uri) => {
       version: ServerApiVersion.v1,
       strict: true,
       deprecationErrors: true,
-    }
-  });
+    },
+  })
 }
 
 export { getMongoClient }

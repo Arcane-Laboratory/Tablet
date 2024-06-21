@@ -156,7 +156,8 @@ class JsonTable<T extends tableData> extends Table<T> {
   private ioBuffer() {
     if (this.bufferWrite) {
       this.saveTable()
-      this.bufferWrite = false
+        .then(() => (this.bufferWrite = false))
+        .catch((err) => console.log(err))
     }
   }
 
