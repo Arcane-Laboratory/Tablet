@@ -1,7 +1,7 @@
 import { Entity } from './Entity'
 import { Table } from './Table'
 
-const tableToString = (tableName: string): string => {
+const tableToString = async (tableName: string): Promise<string> => {
   const table = Table.all.get(tableName)
   if (table == undefined) return 'undefined'
   else return table.toString()

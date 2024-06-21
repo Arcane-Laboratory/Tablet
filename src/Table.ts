@@ -10,9 +10,8 @@ abstract class Table<T extends tableData> {
       throw `There is already a table named ${name}. Pick a different name for this one!`
     Table.all.set(name, this)
   }
-  public abstract numEntries(): number
-  public abstract toArray(): Array<T>
-
+  public abstract numEntries(): Promise<number>
+  public abstract toArray(): Promise<Array<T>>
   public abstract fetch(id: string, forceRefresh?: boolean): Promise<T | null>
   public abstract fetchAll(forceRefresh?: boolean): Promise<Array<T> | false>
   public abstract crupdate(entry: T): Promise<T | false>
@@ -21,8 +20,9 @@ abstract class Table<T extends tableData> {
   public abstract filter(filter: (entry: T) => boolean): Promise<Array<T>>
   public abstract find(finder: (entry: T) => boolean): Promise<T | undefined>
 
-  public toString(): string {
-    const str = `Tablet: ${this.name} \n${this.numEntries()} entries`
+  public async toString(): Promise<string> {
+    const entries = await this.numEntries()
+    const str = `Tablet: ${this.name} \n${entries} entries`
     // this.cache.forEach(
     //   (datum) => (str += `\n ${datum.id}: ${Table.idDataStringify(datum)}`)
     // )
@@ -38,13 +38,14 @@ abstract class Table<T extends tableData> {
     await this.loadPromise
     await targetTable.loadPromise
     const crupdates: Promise<false | T>[] = []
-    this.toArray().map((entry) => targetTable.crupdate(entry))
-    if (verbose)
+    const array = await this.toArray()
+    array.map((entry) => crupdates.push(targetTable.crupdate(entry)))
+    if (verbose) {
+      const entries = this.numEntries()
       console.log(
-        ` Tablet: Cloning ${this.numEntries()} entries from ${this.name} into ${
-          targetTable.name
-        }`
+        ` Tablet: Cloning ${entries} entries from ${this.name} into ${targetTable.name}`
       )
+    }
     return Promise.all(crupdates)
   }
 
