@@ -143,19 +143,21 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   public async filter(filter: (entry: T) => boolean): Promise<T[]> {
     await this.loadPromise
-    const data = this.toArray()
+    const data = await this.toArray()
     return data.filter(filter)
   }
   public async find(finder: (entry: T) => boolean): Promise<T | undefined> {
     await this.loadPromise
-    const data = this.toArray()
+    const data = await this.toArray()
     const foundData = data.find(finder)
     return foundData
   }
-  public numEntries(): number {
+  public async numEntries(): Promise<number> {
+    await this.loadPromise
     return this.rows.length
   }
-  public toArray(): T[] {
+  public async toArray(): Promise<T[]> {
+    await this.loadPromise
     const array: Array<T> = []
     this.rows.forEach((row) => {
       const parsedRow = this.parseRow(row)

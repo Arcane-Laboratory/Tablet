@@ -40,22 +40,19 @@ class JsonTable<T extends tableData> extends Table<T> {
     this.dirPath = fileDir == 'DEFAULT' ? DEFAULT_DIRECTORY : fileDir
     this.filePath = path.join(this.dirPath.toString(), name + fileExt)
     this.summary['FILE'] = { value: this.filePath.toString() }
-    this.loadPromise = new Promise((resolve) => {
-      this.loadTable()
-      resolve(true)
-    })
+    this.loadPromise = this.loadTable()
   }
   /**
    * @returns how many entries are in this table
    */
-  public numEntries(): number {
+  public async numEntries(): Promise<number> {
     return this.cache.size
   }
 
   /**
    * @returns an array of this table's entries
    */
-  public toArray() {
+  public async toArray() {
     const arr: Array<T> = []
     this.cache.forEach((value) => {
       arr.push(value)
@@ -163,25 +160,26 @@ class JsonTable<T extends tableData> extends Table<T> {
     }
   }
 
-  private saveTable() {
+  private async saveTable() {
     this.touchDir()
     const savable: jsonStore<T> = {
       __name: this.name,
       _lastUpdate: nowString(),
-      data: this.toArray(),
+      data: await this.toArray(),
     }
     const stringifiedTable = stringify(savable, stringifyOpts)
 
     try {
       writeFileSync(this.filePath, stringifiedTable)
-      this.summary['SAVED_ENTRIES'] = { value: this.numEntries() }
+      const entries = savable.data.length
+      this.summary['SAVED_ENTRIES'] = { value: entries }
     } catch (err) {
       this.summary.ERRORS.value++
       console.log(err)
     }
   }
   private retries = 0
-  private loadTable(): Table<T> {
+  private async loadTable(): Promise<boolean> {
     this.touchDir()
     let fileOut: jsonStore<T>
     try {
@@ -195,7 +193,7 @@ class JsonTable<T extends tableData> extends Table<T> {
       })
       this.summary.READS.value = fileOut.data.length
 
-      return this
+      return true
     } catch (err) {
       if (err instanceof Error) {
         if (
@@ -205,7 +203,7 @@ class JsonTable<T extends tableData> extends Table<T> {
           if (this.retries > 3)
             throw `TABLET_ERROR: JsonTable.load failed after ${this.retries} attempts`
           this.retries++
-          this.saveTable()
+          await this.saveTable()
           return this.loadTable()
         } else if (err.name.substring(0, 11) == 'SyntaxError') {
           throw `TABLET_ERROR: JSONTABLE FILE ${this.filePath} IS INCORRECTLY FORMATTED`
