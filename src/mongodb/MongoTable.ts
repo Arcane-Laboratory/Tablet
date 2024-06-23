@@ -41,7 +41,7 @@ class MongoTable<T extends tableData> extends Table<T> {
   public async crupdate(entry: T): Promise<T | false> {
     await this.loadPromise
     const filter = { _id: entry._id } as Filter<T>
-    const result = await this.collection.updateOne(filter, entry, { upsert : true })
+    const result = await this.collection.replaceOne(filter, entry, { upsert : true })
     if (!result.acknowledged || result.modifiedCount === 0) return false
     return entry
   }
