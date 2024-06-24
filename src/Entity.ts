@@ -263,6 +263,18 @@ export abstract class Entity<T extends tableData> implements tableData {
   }
 
   /**
+   * delete a given entity from the table
+   */
+  public static async deleteEntry<T extends tableData, U extends Entity<T>>(
+    this: new (...args: any[]) => U,
+    id: string
+  ): Promise<boolean> {
+    const table = Entity.findTable(this)
+    if (table === null) return false
+    return table.delete({ _id: id } as T)
+  }
+
+  /**
    * find a table belonging to a child class given the child class
    * @param entityConstructor the child class
    * @returns the table which stores that child class's information

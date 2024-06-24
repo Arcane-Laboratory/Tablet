@@ -201,6 +201,15 @@ class Entity {
         return Entity.findCache(this).size;
     }
     /**
+     * delete a given entity from the table
+     */
+    static async deleteEntry(id) {
+        const table = Entity.findTable(this);
+        if (table === null)
+            return false;
+        return table.delete({ _id: id });
+    }
+    /**
      * find a table belonging to a child class given the child class
      * @param entityConstructor the child class
      * @returns the table which stores that child class's information

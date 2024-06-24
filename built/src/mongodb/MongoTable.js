@@ -40,7 +40,7 @@ class MongoTable extends Table_1.Table {
     async crupdate(entry) {
         await this.loadPromise;
         const filter = { _id: entry._id };
-        const result = await this.collection.updateOne(filter, entry);
+        const result = await this.collection.replaceOne(filter, entry, { upsert: true });
         if (!result.acknowledged || result.modifiedCount === 0)
             return false;
         return entry;
