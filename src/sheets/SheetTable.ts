@@ -166,6 +166,15 @@ export class SheetTable<T extends tableData> extends Table<T> {
     return array
   }
 
+  public getCache(): T[] {
+    const array: Array<T> = []
+    this.rows.forEach((row) => {
+      const parsedRow = this.parseRow(row)
+      if (parsedRow != null) array.push(parsedRow)
+    })
+    return array
+  }
+
   private hasChanges(entry: T, index = -1): boolean {
     let changes = false
     if (index === -1) index = this.findRowIndexById(entry._id)

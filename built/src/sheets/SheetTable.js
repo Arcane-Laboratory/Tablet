@@ -215,6 +215,15 @@ class SheetTable extends Table_1.Table {
         });
         return array;
     }
+    getCache() {
+        const array = [];
+        this.rows.forEach((row) => {
+            const parsedRow = this.parseRow(row);
+            if (parsedRow != null)
+                array.push(parsedRow);
+        });
+        return array;
+    }
     hasChanges(entry, index = -1) {
         let changes = false;
         if (index === -1)

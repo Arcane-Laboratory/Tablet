@@ -28,6 +28,7 @@ export declare class SheetTable<T extends tableData> extends Table<T> {
     find(finder: (entry: T) => boolean): Promise<T | undefined>;
     numEntries(): Promise<number>;
     toArray(): Promise<T[]>;
+    getCache(): T[];
     private hasChanges;
     private load;
     private getOrCreateSheet;
