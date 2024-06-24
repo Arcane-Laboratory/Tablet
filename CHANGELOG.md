@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.2]
 
+- Added `Entity.deleteEntry` public static method
+
+## [0.3.2]
+
 - Update when an entry does not exist should create the entry
 
 ## [0.3.0]
