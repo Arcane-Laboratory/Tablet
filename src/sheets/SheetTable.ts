@@ -138,6 +138,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   public async fetchAll(): Promise<Array<T>> {
     await this.loadPromise
+    await this.loadRows()
     return this.toArray()
   }
 

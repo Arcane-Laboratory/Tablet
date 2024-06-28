@@ -188,6 +188,7 @@ class SheetTable extends Table_1.Table {
     }
     async fetchAll() {
         await this.loadPromise;
+        await this.loadRows();
         return this.toArray();
     }
     async filter(filter) {
