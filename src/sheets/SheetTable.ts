@@ -17,7 +17,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
   private spreadsheet!: Spreadsheet
   private sheet!: Sheet
-  public loadPromise: Promise<boolean>
+  public loadPromise: Promise<boolean> | null = null
   private rows!: Array<Row>
   private headers = ['id', 'createdAt', 'lastUpdate']
   /**
@@ -45,6 +45,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
       .catch((err) => {
         console.log(`error loading ${this.name}`)
         console.log(err)
+      })
+      .finally(()=>{
+        this.loadPromise = null
       })
   }
   public async crupdate(entry: T, changes = false): Promise<T | false> {
@@ -137,6 +140,10 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   public async fetchAll(): Promise<Array<T>> {
+  if(!this.loadPromise)
+    {
+      this.loadPromise = this.load()
+    } 
     await this.loadPromise
     return this.toArray()
   }

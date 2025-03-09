@@ -6,7 +6,7 @@ export declare class SheetTable<T extends tableData> extends Table<T> {
     readonly spreadsheetId: string;
     private spreadsheet;
     private sheet;
-    loadPromise: Promise<boolean>;
+    loadPromise: Promise<boolean> | null;
     private rows;
     private headers;
     /**

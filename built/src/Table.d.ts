@@ -3,7 +3,7 @@ import { tableSummary } from './utilities';
 declare abstract class Table<T extends tableData> {
     readonly name: string;
     static all: Map<string, Table<tableData>>;
-    abstract loadPromise: Promise<boolean>;
+    abstract loadPromise: Promise<boolean> | null;
     constructor(name: string);
     abstract numEntries(): number;
     abstract toArray(): Array<T>;

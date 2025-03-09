@@ -17,6 +17,7 @@ class SheetTable extends Table_1.Table {
         super(name);
         this.name = name;
         this.spreadsheetInfo = spreadsheetInfo;
+        this.loadPromise = null;
         this.headers = ['id', 'createdAt', 'lastUpdate'];
         /*
          * Load the class sheet
@@ -96,6 +97,9 @@ class SheetTable extends Table_1.Table {
             .catch((err) => {
             console.log(`error loading ${this.name}`);
             console.log(err);
+        })
+            .finally(() => {
+            this.loadPromise = null;
         });
     }
     async crupdate(entry, changes = false) {
@@ -187,6 +191,9 @@ class SheetTable extends Table_1.Table {
         return this.parseRow(this.rows[index]);
     }
     async fetchAll() {
+        if (!this.loadPromise) {
+            this.loadPromise = this.load();
+        }
         await this.loadPromise;
         return this.toArray();
     }
