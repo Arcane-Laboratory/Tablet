@@ -3,7 +3,7 @@ import { tableSummary } from './utilities'
 
 abstract class Table<T extends tableData> {
   public static all = new Map<string, Table<tableData>>()
-  public abstract loadPromise: Promise<boolean>
+  public abstract loadPromise: Promise<boolean> | null
   constructor(public readonly name: string) {
     const extantTable = Table.all.get(name)
     if (extantTable)
