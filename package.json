@@ -1,14 +1,15 @@
 {
   "name": "@wizardtower/tablet",
-  "version": "0.3.7",
+  "version": "0.3.9",
   "description": "DB abstraction layer for JSON, Sheets, MongoDB, etc.",
   "main": "./built/index.js",
   "exports": {
     "require": "./built/index.js"
   },
   "files": [
-    "built",
-    "CHANGELOG.md"
+    "built/*",
+    "CHANGELOG.md",
+    "README.md"
   ],
   "scripts": {
     "test": "npm run test",
