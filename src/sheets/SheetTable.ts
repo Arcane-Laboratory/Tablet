@@ -40,7 +40,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
     this.loadPromise = this.load()
     this.loadPromise
       .then(() => {
-        this.summary['SPREADSHEET'] = this.spreadsheet.title
+        this.summary['SPREADSHEET'] = { value: this.spreadsheet.title }
       })
       .catch((err) => {
         console.log(`error loading ${this.name}`)
@@ -100,7 +100,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
     if (changes) {
       try {
         await limiter.removeTokens(1)
-        this.rows[index].lastUpdate = nowString()
+        // Use the set method to update the row value
+        this.rows[index].set('lastUpdate', nowString())
         await this.rows[index].save({ raw: true })
         return true
       } catch (err) {
@@ -182,9 +183,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
       if (
         header != 'lastUpdate' &&
         flatValue &&
-        this.rows[index][header] != flatValue
+        this.rows[index].get(header) != flatValue
       ) {
-        this.rows[index][header] = flatValue
+        this.rows[index].set(header, flatValue)
         changes = true
       }
     })
@@ -271,12 +272,12 @@ export class SheetTable<T extends tableData> extends Table<T> {
     this.headers.forEach((header) => {
       if (failure) return
       try {
-        parsedObject[header] = parseVal(row[header])
+        parsedObject[header] = parseVal(row.get(header))
       } catch (err) {
         console.log(
           `unable to parse ${header} of ${this.name} at row ${row.rowNumber}:`
         )
-        console.log(row[header])
+        console.log(row.get(header))
         failure = true
         return null
       }
@@ -286,7 +287,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private findRowIndexById = (_id: string): number => {
     const index = this.rows.findIndex(
-      (row) => parseVal(row._id)?.toString() === _id.toString()
+      (row) => parseVal(row.get('_id'))?.toString() === _id.toString()
     )
     return index
   }

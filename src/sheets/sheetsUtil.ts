@@ -1,5 +1,6 @@
 import { RateLimiter } from 'limiter'
 import { GoogleSpreadsheet as Spreadsheet } from 'google-spreadsheet'
+import { JWT } from 'google-auth-library'
 
 interface gKey {
   private_key: string
@@ -29,12 +30,19 @@ const loadSpreadsheet = async (
     return loadPromise
   } catch (err) {
     if (err) console.log(err)
+    throw err // Add proper error handling
   }
 }
 
 const load = async (spreadsheetInfo: spreadsheetInfo): Promise<Spreadsheet> => {
-  const spreadsheet = new Spreadsheet(spreadsheetInfo.spreadsheetId)
-  await spreadsheet.useServiceAccountAuth(spreadsheetInfo.gKey)
+  // Create JWT auth client for service account
+  const auth = new JWT({
+    email: spreadsheetInfo.gKey.client_email,
+    key: spreadsheetInfo.gKey.private_key,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  })
+
+  const spreadsheet = new Spreadsheet(spreadsheetInfo.spreadsheetId, auth)
   await spreadsheet.loadInfo()
   console.log(` Tablet: Connected to spreadsheet '${spreadsheet.title}'`)
   return spreadsheet
