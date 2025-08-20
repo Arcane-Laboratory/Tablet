@@ -6,8 +6,11 @@ abstract class Table<T extends tableData> {
   public abstract loadPromise: Promise<boolean> | null
   constructor(public readonly name: string) {
     const extantTable = Table.all.get(name)
-    if (extantTable)
-      throw `There is already a table named ${name}. Pick a different name for this one!`
+    if (extantTable) {
+      throw new Error(
+        `There is already a table named ${name}. Pick a different name for this one!`
+      )
+    }
     Table.all.set(name, this)
   }
   public abstract numEntries(): Promise<number>
