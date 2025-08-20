@@ -4,6 +4,14 @@ export { JsonTable } from './src/json/JsonTable'
 export { SheetTable } from './src/sheets/SheetTable'
 export { MongoTable } from './src/mongodb/MongoTable'
 
+// Export error classes
+export {
+  TableError,
+  ValidationError,
+  DatabaseConnectionError,
+  DataOperationError,
+} from './src/errors/TableErrors'
+
 export { gKey, spreadsheetInfo } from './src/sheets/sheetsUtil'
 export { getMongoClient } from './src/mongodb/mongoUtil'
 

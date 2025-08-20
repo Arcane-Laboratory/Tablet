@@ -12,6 +12,10 @@ import {
   spreadsheetInfo,
 } from './sheetsUtil'
 import { randomUUID } from 'crypto'
+import {
+  DatabaseConnectionError,
+  DataOperationError,
+} from '../errors/TableErrors'
 
 export class SheetTable<T extends tableData> extends Table<T> {
   public readonly spreadsheetId: string
@@ -40,11 +44,15 @@ export class SheetTable<T extends tableData> extends Table<T> {
     this.loadPromise = this.load()
     this.loadPromise
       .then(() => {
-        this.summary['SPREADSHEET'] = this.spreadsheet.title
+        this.summary['SPREADSHEET'] = { value: this.spreadsheet.title }
       })
       .catch((err) => {
-        console.log(`error loading ${this.name}`)
-        console.log(err)
+        // Re-throw instead of just logging
+        throw new DatabaseConnectionError(
+          `Failed to load spreadsheet ${this.name}`,
+          this.name,
+          err instanceof Error ? err : new Error(String(err))
+        )
       })
       .finally(() => {
         this.loadPromise = null
@@ -69,10 +77,10 @@ export class SheetTable<T extends tableData> extends Table<T> {
   }
 
   private async add(entry: T): Promise<boolean> {
-    await this.loadPromise
-    await limiter.removeTokens(1)
-    const now = nowString()
     try {
+      await this.loadPromise
+      await limiter.removeTokens(1)
+      const now = nowString()
       const flatEntry = { lastUpdate: now, createdAt: now }
       Object.keys(entry).forEach((key) => {
         flatEntry[key] = JSON.stringify(entry[key])
@@ -81,11 +89,11 @@ export class SheetTable<T extends tableData> extends Table<T> {
       this.rows = await this.sheet.getRows()
       return true
     } catch (err) {
-      console.log(`error adding entry to ${this.name}`)
-      console.log(entry)
-      console.log(err)
-      throw err
-      return false
+      throw new DataOperationError(
+        `Failed to add entry to sheet ${this.name}`,
+        this.name,
+        err instanceof Error ? err : new Error(String(err))
+      )
     }
   }
 
@@ -100,13 +108,17 @@ export class SheetTable<T extends tableData> extends Table<T> {
     if (changes) {
       try {
         await limiter.removeTokens(1)
-        this.rows[index].lastUpdate = nowString()
+        // Use the set method to update the row value
+        this.rows[index].set('lastUpdate', nowString())
         await this.rows[index].save({ raw: true })
         return true
       } catch (err) {
-        console.log(err)
         this.summary.ERRORS.value++
-        return true
+        throw new DataOperationError(
+          `Failed to update entry in sheet ${this.name}`,
+          this.name,
+          err instanceof Error ? err : new Error(String(err))
+        )
       }
     } else {
       return true
@@ -126,9 +138,11 @@ export class SheetTable<T extends tableData> extends Table<T> {
       return true
     } catch (err) {
       this.summary.ERRORS.value++
-
-      console.log(err)
-      return false
+      throw new DataOperationError(
+        `Failed to delete entry from sheet ${this.name}`,
+        this.name,
+        err instanceof Error ? err : new Error(String(err))
+      )
     }
   }
 
@@ -182,9 +196,9 @@ export class SheetTable<T extends tableData> extends Table<T> {
       if (
         header != 'lastUpdate' &&
         flatValue &&
-        this.rows[index][header] != flatValue
+        this.rows[index].get(header) != flatValue
       ) {
-        this.rows[index][header] = flatValue
+        this.rows[index].set(header, flatValue)
         changes = true
       }
     })
@@ -211,10 +225,12 @@ export class SheetTable<T extends tableData> extends Table<T> {
       try {
         sheet = await this.spreadsheet.addSheet({ title: this.name })
       } catch (err) {
-        console.log(`Sheet Creation Failed for ${this.name}`)
         this.summary.ERRORS.value++
-
-        console.log(err)
+        throw new DataOperationError(
+          `Sheet Creation Failed for ${this.name}`,
+          this.name,
+          err instanceof Error ? err : new Error(String(err))
+        )
       }
     }
     return sheet
@@ -260,8 +276,11 @@ export class SheetTable<T extends tableData> extends Table<T> {
       return true
     } catch (err) {
       this.summary.ERRORS.value++
-      console.log(err)
-      return false
+      throw new DataOperationError(
+        `Failed to load rows from sheet ${this.name}`,
+        this.name,
+        err instanceof Error ? err : new Error(String(err))
+      )
     }
   }
 
@@ -271,12 +290,8 @@ export class SheetTable<T extends tableData> extends Table<T> {
     this.headers.forEach((header) => {
       if (failure) return
       try {
-        parsedObject[header] = parseVal(row[header])
+        parsedObject[header] = parseVal(row.get(header))
       } catch (err) {
-        console.log(
-          `unable to parse ${header} of ${this.name} at row ${row.rowNumber}:`
-        )
-        console.log(row[header])
         failure = true
         return null
       }
@@ -286,7 +301,7 @@ export class SheetTable<T extends tableData> extends Table<T> {
 
   private findRowIndexById = (_id: string): number => {
     const index = this.rows.findIndex(
-      (row) => parseVal(row._id)?.toString() === _id.toString()
+      (row) => parseVal(row.get('_id'))?.toString() === _id.toString()
     )
     return index
   }

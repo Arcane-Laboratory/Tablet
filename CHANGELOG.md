@@ -4,6 +4,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2024-08-19
+
+### Added
+
+- **Error Classes**: Introduced comprehensive error handling with custom error classes:
+  - `TableError` - Base error class with operation context, table name, and original error
+  - `ValidationError` - For data validation failures
+  - `DatabaseConnectionError` - For database connection issues
+  - `DataOperationError` - For data operation failures
+- **Error Utilities**: Added helper functions in `utilities.ts` for consistent error handling
+- **Error Types**: Added `TableResult<T>` and `TableErrorResult<T>` types for better error handling
+
+### Changed
+
+- **Error Propagation**: Eliminated silent error swallowing across all table implementations
+  - JsonTable: Replaced all `console.log(err)` calls with proper error propagation
+  - MongoTable: Added comprehensive error handling to all database operations
+  - SheetTable: Fixed error handling in constructor and all async methods
+- **Base Table Class**: Fixed constructor to throw proper `Error` objects instead of strings
+- **Async Error Handling**: All Promise rejections now properly propagate upstream with context
+
+### Fixed
+
+- **Silent Failures**: All table operations now properly throw errors instead of silently failing
+- **Error Context**: Errors now include meaningful context (table name, operation type, original error)
+- **String Errors**: Replaced all string-based errors with proper Error objects
+
+### Technical Details
+
+- **Breaking Change**: Some methods that previously returned `false` on failure may now throw errors
+- **Migration**: Applications should update error handling to catch `TableError` and its subclasses
+- **Backward Compatibility**: Method signatures preserved where possible to minimize breaking changes
+
+## [0.4.0] - 2024-08-19
+
+### Changed
+
+- **BREAKING**: Updated Google Sheets dependency from v3.3.0 to v5.0.2
+- **BREAKING**: Updated Google Sheets API usage to match v5 API changes:
+  - Constructor now requires auth parameter: `new Spreadsheet(spreadsheetId, auth)`
+  - Authentication now uses `google-auth-library` JWT client instead of `useServiceAccountAuth()`
+  - Row access now uses `.get()` and `.set()` methods instead of direct property access
+  - Added `google-auth-library` as a dependency
+
+### Fixed
+
+- Fixed linting error with floating promise in Entity.ts
+- Updated all Google Sheets related code to work with the new v5 API
+- Improved error handling in sheets utility functions
+
+### Technical Details
+
+- **Google Sheets v5 Changes**: The new API provides better TypeScript support, improved performance, and modern authentication patterns
+- **Authentication**: Now uses the official `google-auth-library` package for better security and maintainability
+- **Row API**: The new row-based API is more consistent and provides better type safety
+
 ## [0.3.9]
 
 - Fixed broken build 🙏

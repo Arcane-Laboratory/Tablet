@@ -6,6 +6,7 @@ import {
   writeFileSync,
 } from 'fs'
 import { Table, tableData } from '../Table'
+import { DataOperationError, ValidationError } from '../errors/TableErrors'
 
 import { default as stringify } from 'json-stable-stringify'
 import path from 'path'
@@ -116,7 +117,9 @@ class JsonTable<T extends tableData> extends Table<T> {
    * @returns the entry, now updated in the table
    */
   public async crupdate(entry: T) {
-    if (!this.validate(entry)) throw `${entry} is not valid`
+    if (!this.validate(entry)) {
+      throw new ValidationError(`${entry} is not valid`, this.name)
+    }
     this.cache.set(entry._id, entry)
     this.bufferWrite = true
     this.summary.UPDATES.value++
@@ -130,15 +133,21 @@ class JsonTable<T extends tableData> extends Table<T> {
    */
   public async crupdates(entries: Array<T>) {
     const successfulCrupdates: Array<T> = []
-    entries.forEach(async (entry) => {
+
+    for (const entry of entries) {
       try {
         const success = await this.crupdate(entry)
-        successfulCrupdates.push(success)
+        if (success) successfulCrupdates.push(success)
       } catch (err) {
-        console.log(err)
         this.summary.ERRORS.value++
+        // Re-throw the error instead of just logging
+        throw new DataOperationError(
+          `Failed to crupdate entry ${entry._id}`,
+          this.name,
+          err instanceof Error ? err : new Error(String(err))
+        )
       }
-    })
+    }
     return successfulCrupdates
   }
 
@@ -157,7 +166,14 @@ class JsonTable<T extends tableData> extends Table<T> {
     if (this.bufferWrite) {
       this.saveTable()
         .then(() => (this.bufferWrite = false))
-        .catch((err) => console.log(err))
+        .catch((err) => {
+          // Re-throw instead of just logging
+          throw new DataOperationError(
+            `Failed to save table ${this.name}`,
+            this.name,
+            err instanceof Error ? err : new Error(String(err))
+          )
+        })
     }
   }
 
@@ -176,7 +192,12 @@ class JsonTable<T extends tableData> extends Table<T> {
       this.summary['SAVED_ENTRIES'] = { value: entries }
     } catch (err) {
       this.summary.ERRORS.value++
-      console.log(err)
+      // Re-throw instead of just logging
+      throw new DataOperationError(
+        `Failed to save table to file ${this.filePath}`,
+        this.name,
+        err instanceof Error ? err : new Error(String(err))
+      )
     }
   }
   private retries = 0
@@ -185,11 +206,20 @@ class JsonTable<T extends tableData> extends Table<T> {
     let fileOut: jsonStore<T>
     try {
       fileOut = JSON.parse(readFileSync(this.filePath, 'utf-8').toString())
-      if (!Array.isArray(fileOut.data))
-        throw `${this.filePath} data is formatted incorrectly, needs to be an array`
+      if (!Array.isArray(fileOut.data)) {
+        throw new ValidationError(
+          `${this.filePath} data is formatted incorrectly, needs to be an array`,
+          this.name
+        )
+      }
       fileOut.data.forEach((entry) => {
         this.crupdate(entry).catch((err) => {
-          console.log(err)
+          // Re-throw instead of just logging
+          throw new DataOperationError(
+            'Failed to load entry during table initialization',
+            this.name,
+            err instanceof Error ? err : new Error(String(err))
+          )
         })
       })
       this.summary.READS.value = fileOut.data.length
@@ -201,16 +231,21 @@ class JsonTable<T extends tableData> extends Table<T> {
           err.message ==
           `ENOENT: no such file or directory, open '${this.filePath}'`
         ) {
-          if (this.retries > 3)
-            throw `TABLET_ERROR: JsonTable.load failed after ${this.retries} attempts`
+          if (this.retries > 3) {
+            throw new DataOperationError(
+              `JsonTable.load failed after ${this.retries} attempts`,
+              this.name
+            )
+          }
           this.retries++
           await this.saveTable()
           return this.loadTable()
         } else if (err.name.substring(0, 11) == 'SyntaxError') {
-          throw `TABLET_ERROR: JSONTABLE FILE ${this.filePath} IS INCORRECTLY FORMATTED`
+          throw new ValidationError(
+            `JSONTABLE FILE ${this.filePath} IS INCORRECTLY FORMATTED`,
+            this.name
+          )
         } else {
-          console.log(err.message.substring(0, 10))
-          console.log(err.name.substring(0, 10))
           this.summary.ERRORS.value++
           throw err
         }

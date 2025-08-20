@@ -364,7 +364,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     const factory = Entity.findLoadFactory<T, U>(ctor)
     const entityPromise = factory(record)
     loadPromises.set(record._id, entityPromise)
-    entityPromise.then((newEntity) => {
+    void entityPromise.then((newEntity) => {
       // remove the promise from the loadPromises map
       loadPromises.delete(record._id)
       // if the entity was successfully created, add it to the cache

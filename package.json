@@ -1,6 +1,6 @@
 {
   "name": "@wizardtower/tablet",
-  "version": "0.3.9",
+  "version": "0.4.1",
   "description": "DB abstraction layer for JSON, Sheets, MongoDB, etc.",
   "main": "./built/index.js",
   "exports": {
@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "eslint": "^8.26.0",
-    "google-spreadsheet": "^3.3.0",
+    "google-auth-library": "^10.2.1",
+    "google-spreadsheet": "^5.0.2",
     "json-stable-stringify": "^1.0.2",
     "limiter": "^2.1.0",
     "mongodb": "^6.5.0"
