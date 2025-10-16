@@ -202,24 +202,29 @@ export abstract class Entity<T extends tableData> implements tableData {
 
   /**
    * save this to the entity table
-   * @returns the id of the written entity's record if successful, null otherwise
+   * @returns the updated entity record if successful, null otherwise
    */
-  async save(): Promise<string | null> {
-    const ctor = Entity.ctorOf(this)
-    // ensure the cache is up to date
-    Entity.findCache(ctor).set(this._id, this)
+  async save(mergeFunction?: (newVal: T, oldVal: T) => T): Promise<Entity<T> | null> {
+    const ctor = Entity.ctorOf<T, typeof this>(this)
     const table = Entity.findTable(ctor)
-    const record = this.generateRecord()
     if (table === null) return null
-    const writtenRecord = await table.crupdate(record)
-    if (writtenRecord) return writtenRecord._id
-    else return null
-  }
 
-  saveSync(): void {
-    this.save().catch((err) => {
-      console.log(err)
-    })
+    let recordToSave: T = this.generateRecord()
+    if (mergeFunction) {
+      // fetch the current value in the db (bypass cache)
+      const existingRecord = await table.fetch(this._id, true)
+
+      // merge with existing entity if it exists
+      if (existingRecord) {
+        recordToSave = mergeFunction(recordToSave, existingRecord)
+      }
+    }
+    
+    // save the entity to the db
+    const writtenRecord = await table.crupdate(recordToSave)
+    const writtenEntity = writtenRecord ? await Entity.build(writtenRecord, ctor, true) : null
+   
+    return writtenEntity
   }
 
   /**
@@ -348,12 +353,15 @@ export abstract class Entity<T extends tableData> implements tableData {
 
   private static async build<T extends tableData, U extends Entity<T>>(
     record: T,
-    ctor: entityConstructor<T>
+    ctor: entityConstructor<T>,
+    bypassCache = false
   ): Promise<U | null> {
-    // if entity is already cached, return it
     const cache = Entity.findCache<T, U>(ctor)
-    const foundEntity = cache.get(record._id)
-    if (foundEntity) return foundEntity
+    if (!bypassCache) {
+      // if entity is already cached, return it
+      const foundEntity = cache.get(record._id)
+      if (foundEntity) return foundEntity
+    }
     // if entity is being loaded, return the promise
     const loadPromises: Map<
       string,
