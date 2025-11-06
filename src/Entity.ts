@@ -204,7 +204,9 @@ export abstract class Entity<T extends tableData> implements tableData {
    * save this to the entity table
    * @returns the updated entity record if successful, null otherwise
    */
-  async save(mergeFunction?: (newVal: T, oldVal: T) => T): Promise<Entity<T> | null> {
+  async save(
+    mergeFunction?: (newVal: T, oldVal: T) => T
+  ): Promise<Entity<T> | null> {
     const ctor = Entity.ctorOf<T, typeof this>(this)
     const table = Entity.findTable(ctor)
     if (table === null) return null
@@ -219,11 +221,13 @@ export abstract class Entity<T extends tableData> implements tableData {
         recordToSave = mergeFunction(recordToSave, existingRecord)
       }
     }
-    
+
     // save the entity to the db
     const writtenRecord = await table.crupdate(recordToSave)
-    const writtenEntity = writtenRecord ? await Entity.build(writtenRecord, ctor, true) : null
-   
+    const writtenEntity = writtenRecord
+      ? await Entity.build(writtenRecord, ctor, true)
+      : null
+
     return writtenEntity
   }
 
@@ -357,18 +361,18 @@ export abstract class Entity<T extends tableData> implements tableData {
     bypassCache = false
   ): Promise<U | null> {
     const cache = Entity.findCache<T, U>(ctor)
-    if (!bypassCache) {
-      // if entity is already cached, return it
-      const foundEntity = cache.get(record._id)
-      if (foundEntity) return foundEntity
-    }
-    // if entity is being loaded, return the promise
     const loadPromises: Map<
       string,
       Promise<U | null>
     > = Entity.findLoadPromises<T, U>(ctor)
-    const loadPromise = loadPromises.get(record._id)
-    if (loadPromise) return loadPromise
+    if (!bypassCache) {
+      // if entity is already cached, return it
+      const foundEntity = cache.get(record._id)
+      if (foundEntity) return foundEntity
+      // if entity is being loaded, return the promise
+      const loadPromise = loadPromises.get(record._id)
+      if (loadPromise) return loadPromise
+    }
     const factory = Entity.findLoadFactory<T, U>(ctor)
     const entityPromise = factory(record)
     loadPromises.set(record._id, entityPromise)
