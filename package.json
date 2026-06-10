@@ -1,6 +1,6 @@
 {
   "name": "@wizardtower/tablet",
-  "version": "1.0.2",
+  "version": "1.0.12",
   "description": "DB abstraction layer for JSON, Sheets, MongoDB, etc.",
   "main": "./built/index.js",
   "exports": {

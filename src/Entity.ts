@@ -1,10 +1,13 @@
 import { randomUUID } from 'crypto'
-import { Table, tableData } from './Table'
+import { Table } from './Table'
+import { baseTableData } from '../types/tableTypes'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type entityConstructor<T extends tableData> = new (...args: any[]) => Entity<T>
+type entityConstructor<T extends baseTableData> = new (
+  ...args: any[]
+) => Entity<T>
 
-export interface loadFactory<T extends tableData, U extends Entity<T>> {
+export interface loadFactory<T extends baseTableData, U extends Entity<T>> {
   (record: T): Promise<U | null>
 }
 
@@ -15,7 +18,7 @@ export interface loadFactory<T extends tableData, U extends Entity<T>> {
  *   .registerEntity method
  *
  */
-export abstract class Entity<T extends tableData> implements tableData {
+export abstract class Entity<T extends baseTableData> implements baseTableData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static tables = new Map<string, Table<any>>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,6 +34,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   private static loadPromises = new Map<string, Map<string, Promise<any>>>()
 
   public readonly _id: string
+  public _version: number | undefined
 
   /**
    *
@@ -59,7 +63,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param loadFactory a function which takes a record and returns an instance of the Entity
    * @returns true if everything worked
    */
-  public static registerEntity<T extends tableData, U extends Entity<T>>(
+  public static registerEntity<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     table: Table<T>,
     loadFactory: loadFactory<T, U>
@@ -84,7 +88,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param id the id of the entity to fetch
    * @returns a promise, which will be the proper entity if it's found and null otherwise
    */
-  static async fetch<T extends tableData, U extends Entity<T>>(
+  static async fetch<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     id: string
   ): Promise<U | null> {
@@ -104,7 +108,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    *
    * @returns a promise of an array of all entities from the table
    */
-  static async fetchAll<T extends tableData, U extends Entity<T>>(
+  static async fetchAll<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U
   ): Promise<{
     successes: number
@@ -140,7 +144,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param filterFn a function used to filter entity records
    * @returns an array of instantiated entities with a record which matches properly
    */
-  static async filterEntity<T extends tableData, U extends Entity<T>>(
+  static async filterEntity<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     filterFn: (entity: T) => boolean
   ): Promise<Array<U>> {
@@ -163,7 +167,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param findFn a function used to find an entity record
    * @returns an instantiated entity with a record matching the findFn
    */
-  static async findEntity<T extends tableData, U extends Entity<T>>(
+  static async findEntity<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     findFn: (entity: T) => boolean
   ): Promise<U | undefined> {
@@ -175,7 +179,7 @@ export abstract class Entity<T extends tableData> implements tableData {
     if (newEntity) return newEntity
   }
 
-  static async findRecord<T extends tableData>(
+  static async findRecord<T extends baseTableData>(
     this: new (...args: any[]) => Entity<T>,
     findFn: (entity: T) => boolean
   ): Promise<T | undefined> {
@@ -189,7 +193,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param record the record to create or update on a table
    * @returns the record that has been updated
    */
-  public static async crupdate<T extends tableData, U extends Entity<T>>(
+  public static async crupdate<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     record: T
   ): Promise<T | null> {
@@ -200,42 +204,63 @@ export abstract class Entity<T extends tableData> implements tableData {
     else return null
   }
 
-  /**
-   * save this to the entity table
-   * @returns the updated entity record if successful, null otherwise
-   */
-  async save(
+  async writeRecordWithMerge<T extends baseTableData>(
+    table: Table<T>,
+    record: T & { _version?: number }, // if tableData is used as T, there will be a version
     mergeFunction?: (newVal: T, oldVal: T) => T
-  ): Promise<Entity<T> | null> {
-    const ctor = Entity.ctorOf<T, typeof this>(this)
-    const table = Entity.findTable(ctor)
-    if (table === null) return null
+  ): Promise<T | false> {
+    const writtenRecord = await table.crupdate(record)
+    if (writtenRecord) {
+      return writtenRecord
+    }
 
-    let recordToSave: T = this.generateRecord()
     if (mergeFunction) {
       // fetch the current value in the db (bypass cache)
       const existingRecord = await table.fetch(this._id, true)
 
       // merge with existing entity if it exists
       if (existingRecord) {
-        recordToSave = mergeFunction(recordToSave, existingRecord)
+        const mergedRecord = mergeFunction(record, existingRecord)
+        const mergedSavedRecord = await table.crupdate(mergedRecord)
+        return mergedSavedRecord
       }
+    } else if (record._version !== undefined) {
+      // if no merge function, increment the version and try again to preserve existing functionality
+      record._version = record._version + 1
+      const retryRecord = await table.crupdate(record)
+      return retryRecord
     }
 
+    return false
+  }
+
+  /**
+   * save this to the entity table
+   * @returns the updated entity record if successful, null otherwise
+   */
+  async save(mergeFunction?: (newVal: T, oldVal: T) => T): Promise<T | null> {
+    const ctor = Entity.ctorOf<T, typeof this>(this)
+    const table = Entity.findTable(ctor)
+    if (table === null) return null
+
+    const recordToSave: T = this.generateRecord()
     // save the entity to the db
-    const writtenRecord = await table.crupdate(recordToSave)
+    const writtenRecord = await this.writeRecordWithMerge<T>(
+      table,
+      recordToSave,
+      mergeFunction
+    )
+
+    // update cache with new entity and return result
     if (writtenRecord) {
-      // Update the cache directly with the latest data
-      const cache = Entity.findCache<typeof recordToSave, this>(ctor)
-      // rebuild the entity from the written record to ensure cache consistency with the database
-      const factory = Entity.findLoadFactory<typeof recordToSave, this>(ctor)
-      const newEntity = await factory(writtenRecord)
-      if (newEntity) {
-        cache.set(newEntity._id, newEntity)
-        console.log(`[Entity.save] Updated cache for ${ctor.name} _id=${newEntity._id}`)
-        return newEntity
-      }
+      const cache = Entity.findCache(ctor)
+      cache.set(this._id, this)
+      console.log(
+        `[Entity.save] Saved and refreshed cache for ${ctor.name} _id=${this._id}`
+      )
+      return writtenRecord
     }
+
     return null
   }
 
@@ -273,7 +298,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    *
    * @returns the number of entities in the table cache
    */
-  public static numCached<T extends tableData>(
+  public static numCached<T extends baseTableData>(
     this: new (...args: any[]) => Entity<T>
   ): number {
     return Entity.findCache(this).size
@@ -282,7 +307,7 @@ export abstract class Entity<T extends tableData> implements tableData {
   /**
    * delete a given entity from the table
    */
-  public static async deleteEntry<T extends tableData, U extends Entity<T>>(
+  public static async deleteEntry<T extends baseTableData, U extends Entity<T>>(
     this: new (...args: any[]) => U,
     id: string
   ): Promise<boolean> {
@@ -296,7 +321,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param entityConstructor the child class
    * @returns the table which stores that child class's information
    */
-  private static findTable<T extends tableData>(
+  private static findTable<T extends baseTableData>(
     entityConstructor: entityConstructor<T>
   ): Table<T> | null {
     const table = Entity.tables.get(entityConstructor.name)
@@ -314,7 +339,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param entityConstructor the child class
    * @returns the cache which stores instance of the child class
    */
-  private static findCache<T extends tableData, U extends Entity<T>>(
+  private static findCache<T extends baseTableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): Map<string, U> {
     const cache = Entity.caches.get(entityConstructor.name)
@@ -325,7 +350,7 @@ export abstract class Entity<T extends tableData> implements tableData {
       ).constructor.toString()}`
   }
 
-  private static findLoadPromises<T extends tableData, U extends Entity<T>>(
+  private static findLoadPromises<T extends baseTableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): Map<string, Promise<U>> {
     const loadPromises = Entity.loadPromises.get(entityConstructor.name)
@@ -341,7 +366,7 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param entityConstructor the child class
    * @returns the load factory
    */
-  private static findLoadFactory<T extends tableData, U extends Entity<T>>(
+  private static findLoadFactory<T extends baseTableData, U extends Entity<T>>(
     entityConstructor: entityConstructor<T>
   ): loadFactory<T, U> {
     const loadFactory = Entity.loadFactories.get(entityConstructor.name)
@@ -357,13 +382,13 @@ export abstract class Entity<T extends tableData> implements tableData {
    * @param entity the object to get the constructor of
    * @returns
    */
-  private static ctorOf = <T extends tableData, U extends Entity<T>>(
+  private static ctorOf = <T extends baseTableData, U extends Entity<T>>(
     entity: U
   ): entityConstructor<T> => {
     return Object.getPrototypeOf(entity).constructor
   }
 
-  private static async build<T extends tableData, U extends Entity<T>>(
+  private static async build<T extends baseTableData, U extends Entity<T>>(
     record: T,
     ctor: entityConstructor<T>
   ): Promise<U | null> {
@@ -381,14 +406,21 @@ export abstract class Entity<T extends tableData> implements tableData {
     const factory = Entity.findLoadFactory<T, U>(ctor)
     const entityPromise = factory(record)
     loadPromises.set(record._id, entityPromise)
-    entityPromise.then((newEntity) => {
-      // remove the promise from the loadPromises map
-      loadPromises.delete(record._id)
-      // if the entity was successfully created, add it to the cache
-      if (newEntity) {
-        cache.set(newEntity._id, newEntity)
-      }
-    })
+    entityPromise
+      .then((newEntity) => {
+        // remove the promise from the loadPromises map
+        loadPromises.delete(record._id)
+        // if the entity was successfully created, add it to the cache
+        if (newEntity) {
+          cache.set(newEntity._id, newEntity)
+        }
+      })
+      .catch((err) => {
+        console.log(
+          `Error building entity of type ${ctor.name} with id ${record._id}:`,
+          err
+        )
+      })
     return entityPromise
   }
 }

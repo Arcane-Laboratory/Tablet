@@ -1,4 +1,5 @@
-import { Table, tableData } from '../Table'
+import { tableData } from '../../types/tableTypes'
+import { Table } from '../Table'
 import { Collection, Filter, MongoClient } from 'mongodb'
 
 class MongoTable<T extends tableData> extends Table<T> {
@@ -38,14 +39,35 @@ class MongoTable<T extends tableData> extends Table<T> {
     await this.loadPromise
     return this.toArray()
   }
+  /**
+   * if the entry has no version, create it with version 0, upsert
+   * if the entry has a version, only update if the version matches and increment the version
+   */
   public async crupdate(entry: T): Promise<T | false> {
     await this.loadPromise
-    const filter = { _id: entry._id } as Filter<T>
-    const result = await this.collection.replaceOne(filter, entry, {
-      upsert: true,
-    })
-    if (!result.acknowledged || result.modifiedCount === 0) return false
-    return entry
+    const isVersioned = entry._version !== undefined
+    const filter = isVersioned
+      ? ({
+          _id: entry._id,
+          _version: entry._version,
+        } as Filter<T>)
+      : ({ _id: entry._id } as Filter<T>)
+    const newVersion = entry._version ? entry._version + 1 : 1
+    const result = await this.collection.findOneAndUpdate(
+      filter,
+      {
+        ...entry,
+        _version: newVersion,
+      },
+      {
+        upsert: !isVersioned,
+        returnDocument: 'after',
+      }
+    )
+    if (!result) {
+      return false
+    }
+    return result as T
   }
   public async crupdates(entries: Array<T>): Promise<Array<T | false>> {
     await this.loadPromise

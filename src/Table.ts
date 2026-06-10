@@ -1,8 +1,8 @@
-import { tableData } from '../types/tableTypes'
+import { baseTableData } from '../types/tableTypes'
 import { tableSummary } from './utilities'
 
-abstract class Table<T extends tableData> {
-  public static all = new Map<string, Table<tableData>>()
+abstract class Table<T extends baseTableData> {
+  public static all = new Map<string, Table<baseTableData>>()
   public abstract loadPromise: Promise<boolean> | null
   constructor(public readonly name: string) {
     const extantTable = Table.all.get(name)
@@ -93,4 +93,4 @@ abstract class Table<T extends tableData> {
   }
 }
 
-export { Table, tableData }
+export { Table }
