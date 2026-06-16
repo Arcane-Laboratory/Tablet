@@ -238,7 +238,9 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
    * save this to the entity table
    * @returns the updated entity record if successful, null otherwise
    */
-  async save(mergeFunction?: (newVal: T, oldVal: T) => T): Promise<T | null> {
+  protected async save(
+    mergeFunction?: (newVal: T, oldVal: T) => T
+  ): Promise<T | null> {
     const ctor = Entity.ctorOf<T, typeof this>(this)
     const table = Entity.findTable(ctor)
     if (table === null) return null

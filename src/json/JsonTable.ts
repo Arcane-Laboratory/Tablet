@@ -205,9 +205,7 @@ class JsonTable<T extends tableData> extends Table<T> {
       if (!Array.isArray(fileOut.data))
         throw `${this.filePath} data is formatted incorrectly, needs to be an array`
       fileOut.data.forEach((entry) => {
-        this.crupdate(entry).catch((err) => {
-          console.log(err)
-        })
+        this.cache.set(entry._id, entry)
       })
       this.summary.READS.value = fileOut.data.length
 
