@@ -239,7 +239,7 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
    * @returns the updated entity record if successful, null otherwise
    */
   protected async save(
-    mergeFunction?: (newVal: T, oldVal: T) => T
+    // mergeFunction?: (newVal: T, oldVal: T) => T // TODO: Make this actually work and then add it back
   ): Promise<T | null> {
     const ctor = Entity.ctorOf<T, typeof this>(this)
     const table = Entity.findTable(ctor)
@@ -250,7 +250,7 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
     const writtenRecord = await this.writeRecordWithMerge<T>(
       table,
       recordToSave,
-      mergeFunction
+      // mergeFunction
     )
 
     // update cache with new entity and return result
