@@ -238,9 +238,8 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
    * save this to the entity table
    * @returns the updated entity record if successful, null otherwise
    */
-  protected async save(
-    // mergeFunction?: (newVal: T, oldVal: T) => T // TODO: Make this actually work and then add it back
-  ): Promise<T | null> {
+  protected async saveEntity(): // mergeFunction?: (newVal: T, oldVal: T) => T // TODO: Make this actually work and then add it back
+  Promise<T | null> {
     const ctor = Entity.ctorOf<T, typeof this>(this)
     const table = Entity.findTable(ctor)
     if (table === null) return null
@@ -249,7 +248,7 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
     // save the entity to the db
     const writtenRecord = await this.writeRecordWithMerge<T>(
       table,
-      recordToSave,
+      recordToSave
       // mergeFunction
     )
 
