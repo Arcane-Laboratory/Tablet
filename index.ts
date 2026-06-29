@@ -1,4 +1,5 @@
-export { Table, tableData } from './src/Table'
+export { Table } from './src/Table'
+export { baseTableData, tableData } from './types/tableTypes'
 
 export { JsonTable } from './src/json/JsonTable'
 export { SheetTable } from './src/sheets/SheetTable'

@@ -5,11 +5,12 @@ import {
   readFileSync,
   writeFileSync,
 } from 'fs'
-import { Table, tableData } from '../Table'
+import { Table } from '../Table'
 
 import { default as stringify } from 'json-stable-stringify'
 import path from 'path'
 import { nowString } from '../utilities'
+import { tableData } from '../../types/tableTypes'
 
 const stringifyOpts = {
   space: 2,
@@ -93,10 +94,14 @@ class JsonTable<T extends tableData> extends Table<T> {
   /**
    *
    * @param id the id of the record to fetch
-   * @param forceRefresh if the table should be reinstantiated, does nothing for json
-   * @returns fthe matching entry, or null if no id matched
+   * @param forceRefresh if true, reloads from disk to get the latest state
+   * @returns the matching entry, or null if no id matched
    */
-  public async fetch(id: string): Promise<T | null> {
+  public async fetch(id: string, forceRefresh?: boolean): Promise<T | null> {
+    if (forceRefresh) {
+      // Reload from disk to bypass cache and get latest state
+      await this.loadTable()
+    }
     const cachedVal = this.cache.get(id)
     if (cachedVal !== undefined) return cachedVal
     return null
@@ -115,12 +120,24 @@ class JsonTable<T extends tableData> extends Table<T> {
    * @param entry the entry to crupdate
    * @returns the entry, now updated in the table
    */
-  public async crupdate(entry: T) {
+  public async crupdate(entry: T): Promise<T | false> {
     if (!this.validate(entry)) throw `${entry} is not valid`
-    this.cache.set(entry._id, entry)
+
+    const existing = this.cache.get(entry._id)
+
+    if (existing && existing._version !== entry._version) {
+      return false
+    }
+
+    const updatedEntry: T = {
+      ...entry,
+      _version: entry._version ? entry._version + 1 : 1,
+    }
+
+    this.cache.set(entry._id, updatedEntry)
     this.bufferWrite = true
     this.summary.UPDATES.value++
-    return entry
+    return updatedEntry
   }
 
   /**
@@ -129,17 +146,17 @@ class JsonTable<T extends tableData> extends Table<T> {
    * @returns an array of successfully crupdated entries
    */
   public async crupdates(entries: Array<T>) {
-    const successfulCrupdates: Array<T> = []
+    const crupdateResults: Array<T | false> = []
     entries.forEach(async (entry) => {
       try {
         const success = await this.crupdate(entry)
-        successfulCrupdates.push(success)
+        crupdateResults.push(success)
       } catch (err) {
         console.log(err)
         this.summary.ERRORS.value++
       }
     })
-    return successfulCrupdates
+    return crupdateResults
   }
 
   /**
@@ -188,9 +205,7 @@ class JsonTable<T extends tableData> extends Table<T> {
       if (!Array.isArray(fileOut.data))
         throw `${this.filePath} data is formatted incorrectly, needs to be an array`
       fileOut.data.forEach((entry) => {
-        this.crupdate(entry).catch((err) => {
-          console.log(err)
-        })
+        this.cache.set(entry._id, entry)
       })
       this.summary.READS.value = fileOut.data.length
 

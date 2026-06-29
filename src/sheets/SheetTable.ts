@@ -1,4 +1,4 @@
-import { Table, tableData } from '../Table'
+import { Table } from '../Table'
 import {
   GoogleSpreadsheet as Spreadsheet,
   GoogleSpreadsheetWorksheet as Sheet,
@@ -12,8 +12,9 @@ import {
   spreadsheetInfo,
 } from './sheetsUtil'
 import { randomUUID } from 'crypto'
+import { baseTableData } from '../../types/tableTypes'
 
-export class SheetTable<T extends tableData> extends Table<T> {
+export class SheetTable<T extends baseTableData> extends Table<T> {
   public readonly spreadsheetId: string
   private spreadsheet!: Spreadsheet
   private sheet!: Sheet
