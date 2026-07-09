@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/Arcane-Laboratory/Tablet#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",

@@ -4,20 +4,25 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  id-token: write # Required for npm Trusted Publishing (OIDC)
+  contents: read
+
 jobs:
   npm-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Use Node.js 18.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
       - run: npm ci
       - run: npm run tsc
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TABLET }}
+      - name: Publish to npm via Trusted Publishing
+        run: npm publish
