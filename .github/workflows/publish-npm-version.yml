@@ -25,4 +25,4 @@ jobs:
       - run: npm ci
       - run: npm run tsc
       - name: Publish to npm via Trusted Publishing
-        run: npm publish --access public
+        run: npm publish
