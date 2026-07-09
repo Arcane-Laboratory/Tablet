@@ -31,6 +31,9 @@
     "url": "https://github.com/Arcane-Laboratory/Tablet/issues"
   },
   "homepage": "https://github.com/Arcane-Laboratory/Tablet#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/jest": "^27.5.2",
     "@types/node": "^18.11.3",
