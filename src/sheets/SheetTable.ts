@@ -52,7 +52,7 @@ export class SheetTable<T extends baseTableData> extends Table<T> {
       })
   }
   public async crupdate(entry: T, changes = false): Promise<T | false> {
-    if (!entry._id) entry._id == randomUUID()
+    entry._id ??= randomUUID()
     const updateExisting = await this.update(entry, changes)
     if (updateExisting) return entry
     else {

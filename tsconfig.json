@@ -21,5 +21,5 @@
     "useDefineForClassFields": false
   },
   "include": ["src", "types", "index.ts"],
-  "exclude": ["node_modules", "built"]
+  "exclude": ["node_modules", "built", "**/*.test.ts"]
 }
