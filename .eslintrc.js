@@ -20,7 +20,7 @@ module.exports = {
       parserOptions: {
         ecmaVersion: 2020, // Allows for the parsing of modern ECMAScript features
         sourceType: 'module', // Allows for the use of imports
-        project: join(__dirname, './tsconfig.json'),
+        project: join(__dirname, './tsconfig.eslint.json'),
       },
 
       env: {
