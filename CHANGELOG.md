@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.2]
 
 - Fixed `SheetTable.crupdate` auto-id generation: `==` comparison replaced with `??=` assignment so entries without `_id` receive a new UUID.
+- Removed debug `console.log` from `Entity.saveEntity`.
 
 ## [1.0.0]
 

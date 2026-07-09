@@ -256,9 +256,6 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
     if (writtenRecord) {
       const cache = Entity.findCache(ctor)
       cache.set(this._id, this)
-      console.log(
-        `[Entity.save] Saved and refreshed cache for ${ctor.name} _id=${this._id}`
-      )
       return writtenRecord
     }
 
