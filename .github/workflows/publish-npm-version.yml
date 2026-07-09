@@ -26,3 +26,5 @@ jobs:
       - run: npm run tsc
       - name: Publish to npm via Trusted Publishing
         run: npm publish
+        env:
+          NPM_CONFIG_PROVENANCE: false
