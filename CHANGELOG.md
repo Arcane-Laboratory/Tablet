@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4]
+
 - Fixed `MongoTable.crupdate` for MongoDB Node driver 6.x: wrap updates in `$set` for `findOneAndUpdate`, fixing `MongoInvalidArgumentError: Update document requires atomic operators` on save.
 
 ## [1.1.3]
