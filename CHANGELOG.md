@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- Fixed `MongoTable.crupdate` for MongoDB Node driver 6.x: use `findOneAndReplace` instead of `findOneAndUpdate` with a plain document, which caused `MongoInvalidArgumentError: Update document requires atomic operators` on save.
+
 ## [1.1.3]
 
 - Republish after fixing npm Trusted Publishing CI workflow (OIDC + sigstore).

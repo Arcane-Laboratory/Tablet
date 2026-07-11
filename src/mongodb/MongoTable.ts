@@ -40,7 +40,7 @@ class MongoTable<T extends tableData> extends Table<T> {
     return this.toArray()
   }
   /**
-   * if the entry has no version, create it with version 0, upsert
+   * if the entry has no version, create it with version 1, upsert
    * if the entry has a version, only update if the version matches and increment the version
    */
   public async crupdate(entry: T): Promise<T | false> {
@@ -53,12 +53,15 @@ class MongoTable<T extends tableData> extends Table<T> {
         } as Filter<T>)
       : ({ _id: entry._id } as Filter<T>)
     const newVersion = entry._version ? entry._version + 1 : 1
-    const result = await this.collection.findOneAndUpdate(
+    const replacement = {
+      ...entry,
+      _version: newVersion,
+    }
+    // findOneAndUpdate requires atomic operators ($set, etc.); we replace the
+    // full document, so use findOneAndReplace (same semantics as legacy replaceOne).
+    const result = await this.collection.findOneAndReplace(
       filter,
-      {
-        ...entry,
-        _version: newVersion,
-      },
+      replacement,
       {
         upsert: !isVersioned,
         returnDocument: 'after',
