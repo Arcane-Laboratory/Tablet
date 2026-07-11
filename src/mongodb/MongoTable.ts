@@ -1,6 +1,6 @@
 import { tableData } from '../../types/tableTypes'
 import { Table } from '../Table'
-import { Collection, Filter, MongoClient } from 'mongodb'
+import { Collection, Filter, MatchKeysAndValues, MongoClient } from 'mongodb'
 
 class MongoTable<T extends tableData> extends Table<T> {
   public loadPromise: Promise<boolean>
@@ -46,22 +46,22 @@ class MongoTable<T extends tableData> extends Table<T> {
   public async crupdate(entry: T): Promise<T | false> {
     await this.loadPromise
     const isVersioned = entry._version !== undefined
+    const { _id, ...entryDataWithoutId } = entry
     const filter = isVersioned
       ? ({
-          _id: entry._id,
+          _id,
           _version: entry._version,
         } as Filter<T>)
-      : ({ _id: entry._id } as Filter<T>)
+      : ({ _id } as Filter<T>)
     const newVersion = entry._version ? entry._version + 1 : 1
-    const replacement = {
-      ...entry,
-      _version: newVersion,
-    }
-    // findOneAndUpdate requires atomic operators ($set, etc.); we replace the
-    // full document, so use findOneAndReplace (same semantics as legacy replaceOne).
-    const result = await this.collection.findOneAndReplace(
+    const result = await this.collection.findOneAndUpdate(
       filter,
-      replacement,
+      {
+        $set: {
+          ...entryDataWithoutId,
+          _version: newVersion,
+        } as MatchKeysAndValues<T>,
+      },
       {
         upsert: !isVersioned,
         returnDocument: 'after',

@@ -7,9 +7,9 @@ interface TestEntry extends tableData {
   name: string
 }
 
-const mockFindOneAndReplace = jest.fn()
+const mockFindOneAndUpdate = jest.fn()
 const mockCollection = {
-  findOneAndReplace: mockFindOneAndReplace,
+  findOneAndUpdate: mockFindOneAndUpdate,
 }
 const mockDb = {
   collection: jest.fn().mockReturnValue(mockCollection),
@@ -32,7 +32,7 @@ describe('MongoTable.crupdate', () => {
     mockDb.collection.mockReturnValue(mockCollection)
   })
 
-  it('updates a versioned entry and increments _version', async () => {
+  it('updates a versioned entry with $set and increments _version', async () => {
     const table = createTable('VersionedUpdate')
     await table.loadPromise
 
@@ -42,14 +42,14 @@ describe('MongoTable.crupdate', () => {
       _version: 3,
     }
     const saved: TestEntry = { ...entry, _version: 4, name: 'Ada' }
-    mockFindOneAndReplace.mockResolvedValue(saved)
+    mockFindOneAndUpdate.mockResolvedValue(saved)
 
     const result = await table.crupdate(entry)
 
     expect(result).toEqual(saved)
-    expect(mockFindOneAndReplace).toHaveBeenCalledWith(
+    expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
       { _id: 'player-1', _version: 3 },
-      { _id: 'player-1', name: 'Ada', _version: 4 },
+      { $set: { name: 'Ada', _version: 4 } },
       { upsert: false, returnDocument: 'after' }
     )
   })
@@ -64,14 +64,14 @@ describe('MongoTable.crupdate', () => {
       _version: undefined,
     }
     const saved: TestEntry = { ...entry, _version: 1 }
-    mockFindOneAndReplace.mockResolvedValue(saved)
+    mockFindOneAndUpdate.mockResolvedValue(saved)
 
     const result = await table.crupdate(entry)
 
     expect(result).toEqual(saved)
-    expect(mockFindOneAndReplace).toHaveBeenCalledWith(
+    expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
       { _id: 'player-2' },
-      { _id: 'player-2', name: 'Bea', _version: 1 },
+      { $set: { name: 'Bea', _version: 1 } },
       { upsert: true, returnDocument: 'after' }
     )
   })
@@ -85,14 +85,14 @@ describe('MongoTable.crupdate', () => {
       name: 'Cyd',
       _version: 1,
     }
-    mockFindOneAndReplace.mockResolvedValue(null)
+    mockFindOneAndUpdate.mockResolvedValue(null)
 
     const result = await table.crupdate(entry)
 
     expect(result).toBe(false)
-    expect(mockFindOneAndReplace).toHaveBeenCalledWith(
+    expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
       { _id: 'player-3', _version: 1 },
-      { _id: 'player-3', name: 'Cyd', _version: 2 },
+      { $set: { name: 'Cyd', _version: 2 } },
       { upsert: false, returnDocument: 'after' }
     )
   })

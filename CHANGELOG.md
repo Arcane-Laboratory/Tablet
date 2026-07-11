@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Fixed `MongoTable.crupdate` for MongoDB Node driver 6.x: use `findOneAndReplace` instead of `findOneAndUpdate` with a plain document, which caused `MongoInvalidArgumentError: Update document requires atomic operators` on save.
+- Fixed `MongoTable.crupdate` for MongoDB Node driver 6.x: wrap updates in `$set` for `findOneAndUpdate`, fixing `MongoInvalidArgumentError: Update document requires atomic operators` on save.
 
 ## [1.1.3]
 
