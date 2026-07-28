@@ -140,12 +140,21 @@ export class SheetTable<T extends baseTableData> extends Table<T> {
     return this.parseRow(this.rows[index])
   }
 
-  public async fetchAll(): Promise<Array<T>> {
-    if (!this.loadPromise) {
+  public async fetchAll(forceRefresh = true): Promise<Array<T>> {
+    if (forceRefresh || !this.loadPromise) {
       this.loadPromise = this.load()
     }
-    await this.loadPromise
-    return this.toArray()
+    const loadPromise = this.loadPromise
+    try {
+      await loadPromise
+      return this.toArray()
+    } finally {
+      // Clear so a resolved promise cannot block later reloads (CMS sync).
+      // Only clear if we still own the slot — concurrent fetchAll may have replaced it.
+      if (this.loadPromise === loadPromise) {
+        this.loadPromise = null
+      }
+    }
   }
 
   public async filter(filter: (entry: T) => boolean): Promise<T[]> {
