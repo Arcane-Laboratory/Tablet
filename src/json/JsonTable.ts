@@ -30,6 +30,7 @@ class JsonTable<T extends tableData> extends Table<T> {
   public readonly filePath: PathLike
   private cache: Map<string, T> = new Map<string, T>()
   private bufferWrite = false
+  private writeGeneration = 0
   private ioBufferInterval = setInterval(() => this.ioBuffer(), 1000)
   /**
    *
@@ -42,6 +43,9 @@ class JsonTable<T extends tableData> extends Table<T> {
     this.filePath = path.join(this.dirPath.toString(), name + fileExt)
     this.summary['FILE'] = { value: this.filePath.toString() }
     this.loadPromise = this.loadTable()
+    if (typeof this.ioBufferInterval.unref === 'function') {
+      this.ioBufferInterval.unref()
+    }
   }
   /**
    * @returns how many entries are in this table
@@ -131,10 +135,11 @@ class JsonTable<T extends tableData> extends Table<T> {
 
     const updatedEntry: T = {
       ...entry,
-      _version: entry._version ? entry._version + 1 : 1,
+      _version: entry._version != null ? entry._version + 1 : 1,
     }
 
     this.cache.set(entry._id, updatedEntry)
+    this.writeGeneration++
     this.bufferWrite = true
     this.summary.UPDATES.value++
     return updatedEntry
@@ -166,16 +171,23 @@ class JsonTable<T extends tableData> extends Table<T> {
    */
   public async delete(entry: T) {
     const res = this.cache.delete(entry._id)
+    this.writeGeneration++
     this.bufferWrite = true
     return res
   }
 
   private ioBuffer() {
-    if (this.bufferWrite) {
-      this.saveTable()
-        .then(() => (this.bufferWrite = false))
-        .catch((err) => console.log(err))
-    }
+    if (!this.bufferWrite) return
+    const generationAtStart = this.writeGeneration
+    this.saveTable()
+      .then(() => {
+        // Only clear when no writes landed during the flush; otherwise keep
+        // bufferWrite so the next interval persists the newer cache state.
+        if (this.writeGeneration === generationAtStart) {
+          this.bufferWrite = false
+        }
+      })
+      .catch((err) => console.log(err))
   }
 
   private async saveTable() {
@@ -211,17 +223,16 @@ class JsonTable<T extends tableData> extends Table<T> {
 
       return true
     } catch (err) {
+      const errno = err as NodeJS.ErrnoException
+      if (errno?.code === 'ENOENT') {
+        if (this.retries > 3)
+          throw `TABLET_ERROR: JsonTable.load failed after ${this.retries} attempts`
+        this.retries++
+        await this.saveTable()
+        return this.loadTable()
+      }
       if (err instanceof Error) {
-        if (
-          err.message ==
-          `ENOENT: no such file or directory, open '${this.filePath}'`
-        ) {
-          if (this.retries > 3)
-            throw `TABLET_ERROR: JsonTable.load failed after ${this.retries} attempts`
-          this.retries++
-          await this.saveTable()
-          return this.loadTable()
-        } else if (err.name.substring(0, 11) == 'SyntaxError') {
+        if (err.name.substring(0, 11) == 'SyntaxError') {
           throw `TABLET_ERROR: JSONTABLE FILE ${this.filePath} IS INCORRECTLY FORMATTED`
         } else {
           console.log(err.message.substring(0, 10))
