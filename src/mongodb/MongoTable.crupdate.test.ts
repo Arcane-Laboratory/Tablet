@@ -96,4 +96,26 @@ describe('MongoTable.crupdate', () => {
       { upsert: false, returnDocument: 'after' }
     )
   })
+
+  it('bumps _version 0 to 1 instead of treating 0 as missing', async () => {
+    const table = createTable('VersionZero')
+    await table.loadPromise
+
+    const entry: TestEntry = {
+      _id: 'player-4',
+      name: 'Dee',
+      _version: 0,
+    }
+    const saved: TestEntry = { ...entry, _version: 1 }
+    mockFindOneAndUpdate.mockResolvedValue(saved)
+
+    const result = await table.crupdate(entry)
+
+    expect(result).toEqual(saved)
+    expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'player-4', _version: 0 },
+      { $set: { name: 'Dee', _version: 1 } },
+      { upsert: false, returnDocument: 'after' }
+    )
+  })
 })

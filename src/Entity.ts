@@ -204,33 +204,61 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
     else return null
   }
 
+  private static readonly MAX_VERSION_RETRIES = 5
+
   async writeRecordWithMerge<T extends baseTableData>(
     table: Table<T>,
     record: T & { _version?: number }, // if tableData is used as T, there will be a version
     mergeFunction?: (newVal: T, oldVal: T) => T
   ): Promise<T | false> {
-    const writtenRecord = await table.crupdate(record)
-    if (writtenRecord) {
-      return writtenRecord
-    }
-
-    if (mergeFunction) {
-      // fetch the current value in the db (bypass cache)
-      const existingRecord = await table.fetch(this._id, true)
-
-      // merge with existing entity if it exists
-      if (existingRecord) {
-        const mergedRecord = mergeFunction(record, existingRecord)
-        const mergedSavedRecord = await table.crupdate(mergedRecord)
-        return mergedSavedRecord
+    let lastExistingVersion: number | undefined
+    for (let attempt = 0; attempt < Entity.MAX_VERSION_RETRIES; attempt++) {
+      const writtenRecord = await table.crupdate(record)
+      if (writtenRecord) {
+        return writtenRecord
       }
-    } else if (record._version !== undefined) {
-      // if no merge function, increment the version and try again to preserve existing functionality
-      record._version = record._version + 1
-      const retryRecord = await table.crupdate(record)
-      return retryRecord
+
+      // Conflict: adopt the table's current version and retry (covers undefined
+      // live _version vs table 1, and skew of 2+). Do not coerce undefined→0
+      // up front — MongoTable treats undefined as unversioned upsert.
+      const existingRecord = (await table.fetch(this._id, true)) as
+        | (T & { _version?: number })
+        | null
+      if (!existingRecord) {
+        break
+      }
+      lastExistingVersion = existingRecord._version
+
+      if (mergeFunction) {
+        const mergedRecord = mergeFunction(record, existingRecord) as T & {
+          _version?: number
+        }
+        mergedRecord._version = existingRecord._version
+        const mergedSavedRecord = await table.crupdate(mergedRecord)
+        if (mergedSavedRecord) {
+          return mergedSavedRecord
+        }
+        const latest = (await table.fetch(this._id, true)) as
+          | (T & { _version?: number })
+          | null
+        if (!latest) {
+          break
+        }
+        lastExistingVersion = latest._version
+        record._version = latest._version
+        continue
+      }
+
+      record._version = existingRecord._version
     }
 
+    console.error(
+      `TABLET_ENTITY.writeRecordWithMerge: exhausted retries for ${
+        Entity.ctorOf(this).name
+      } _id=${this._id} attempted _version=${
+        record._version
+      } existing _version=${lastExistingVersion}`
+    )
     return false
   }
 
@@ -254,11 +282,18 @@ export abstract class Entity<T extends baseTableData> implements baseTableData {
 
     // update cache with new entity and return result
     if (writtenRecord) {
+      const savedVersion = (writtenRecord as T & { _version?: number })._version
+      if (savedVersion !== undefined) {
+        this._version = savedVersion
+      }
       const cache = Entity.findCache(ctor)
       cache.set(this._id, this)
       return writtenRecord
     }
 
+    console.error(
+      `TABLET_ENTITY.saveEntity: failed to save ${ctor.name} _id=${this._id} live _version=${this._version}`
+    )
     return null
   }
 

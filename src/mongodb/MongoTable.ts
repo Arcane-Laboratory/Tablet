@@ -53,7 +53,7 @@ class MongoTable<T extends tableData> extends Table<T> {
           _version: entry._version,
         } as Filter<T>)
       : ({ _id } as Filter<T>)
-    const newVersion = entry._version ? entry._version + 1 : 1
+    const newVersion = entry._version != null ? entry._version + 1 : 1
     const result = await this.collection.findOneAndUpdate(
       filter,
       {

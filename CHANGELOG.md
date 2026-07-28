@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.6]
+
+- Hardened `Entity.saveEntity` / `writeRecordWithMerge`: adopt current table `_version` and retry up to 5 times on conflict (recovers `undefined` vs table `1` and skew ≥2), sync `this._version` on success, and log exhausted retries.
+- Fixed falsy `_version` bump in `JsonTable.crupdate` and `MongoTable.crupdate` (`0` now increments to `1`).
+- Fixed `JsonTable` ioBuffer lost-write race with a write-generation counter so mid-flush updates are not dropped.
+- Made `JsonTable.loadTable` detect missing files via `ENOENT` `code` (more reliable than exact message match) and unref the flush interval.
+
 ## [1.1.4]
 
 - Fixed `MongoTable.crupdate` for MongoDB Node driver 6.x: wrap updates in `$set` for `findOneAndUpdate`, fixing `MongoInvalidArgumentError: Update document requires atomic operators` on save.
