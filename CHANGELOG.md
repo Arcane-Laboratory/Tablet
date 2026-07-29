@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Upgraded `google-spreadsheet` from v3 to v5 (and added peer `google-auth-library`) to remove the vulnerable transitive `axios` dependency. Sheet auth now uses `JWT` service-account credentials; row field access uses `get`/`set`.
+
 ## [1.1.6]
 
 - Hardened `Entity.saveEntity` / `writeRecordWithMerge`: adopt current table `_version` and retry up to 5 times on conflict (recovers `undefined` vs table `1` and skew ≥2), sync `this._version` on success, and log exhausted retries.
