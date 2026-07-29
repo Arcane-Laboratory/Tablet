@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `JsonTable` ioBuffer lost-write race with a write-generation counter so mid-flush updates are not dropped.
 - Made `JsonTable.loadTable` detect missing files via `ENOENT` `code` (more reliable than exact message match) and unref the flush interval.
 
+## [1.1.5]
+
+- Fixed `SheetTable.fetchAll` stale cache: each call (default `forceRefresh=true`) reloads from Google Sheets and clears `loadPromise` afterward so CMS/string sync picks up live edits without restart.
+
 ## [1.1.4]
 
 - Fixed `MongoTable.crupdate` for MongoDB Node driver 6.x: wrap updates in `$set` for `findOneAndUpdate`, fixing `MongoInvalidArgumentError: Update document requires atomic operators` on save.
